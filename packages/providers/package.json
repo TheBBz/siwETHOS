@@ -1,0 +1,54 @@
+{
+  "name": "@signinwithethos/providers",
+  "version": "0.2.0",
+  "description": "SIWE (Sign-In with Ethereum) authentication utilities for Sign in with Ethos",
+  "license": "MIT",
+  "author": "thebbz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thebbz/signinwithethos",
+    "directory": "packages/providers"
+  },
+  "homepage": "https://github.com/thebbz/signinwithethos#readme",
+  "bugs": {
+    "url": "https://github.com/thebbz/signinwithethos/issues"
+  },
+  "keywords": [
+    "ethos",
+    "siwe",
+    "sign-in-with-ethereum",
+    "authentication",
+    "wallet",
+    "web3"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./siwe": {
+      "types": "./dist/siwe/index.d.ts",
+      "import": "./dist/siwe/index.mjs",
+      "require": "./dist/siwe/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

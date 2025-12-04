@@ -1,0 +1,52 @@
+{
+  "name": "@signinwithethos/js",
+  "version": "0.1.0",
+  "description": "JavaScript SDK for Sign in with Ethos authentication",
+  "license": "MIT",
+  "author": "thebbz",
+  "homepage": "https://github.com/thebbz/signinwithethos#readme",
+  "bugs": {
+    "url": "https://github.com/thebbz/signinwithethos/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thebbz/signinwithethos",
+    "directory": "packages/sdk"
+  },
+  "keywords": [
+    "ethos",
+    "siwe",
+    "sign-in-with-ethereum",
+    "oauth",
+    "authentication",
+    "identity",
+    "reputation",
+    "web3",
+    "wallet"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

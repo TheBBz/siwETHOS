@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/server/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/server/$1"
+    }
+  ],
+  "env": {
+    "AUTH_SERVER_URL": "@auth_server_url",
+    "JWT_SECRET": "@jwt_secret",
+    "STORAGE_ADAPTER": "upstash",
+    "UPSTASH_REDIS_REST_URL": "@upstash_redis_rest_url",
+    "UPSTASH_REDIS_REST_TOKEN": "@upstash_redis_rest_token",
+    "SIWE_DOMAIN": "@siwe_domain",
+    "SIWE_NONCE_EXPIRY": "300",
+    "ETHOS_API_URL": "https://api.ethos.network",
+    "ETHOS_CLIENT_NAME": "signinwithethos@0.1.0"
+  }
+}
