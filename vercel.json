@@ -1,17 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "apps/server/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "apps/server/$1"
-    }
-  ],
+  "buildCommand": "pnpm build",
+  "outputDirectory": "apps/server/.next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
   "env": {
     "AUTH_SERVER_URL": "@auth_server_url",
     "JWT_SECRET": "@jwt_secret",
