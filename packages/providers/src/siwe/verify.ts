@@ -16,8 +16,10 @@ import { isValidEthereumAddress, checksumAddress } from './address';
  *
  * The Ethereum personal_sign prefix is:
  * "\x19Ethereum Signed Message:\n" + message.length + message
+ *
+ * @internal Reserved for future client-side verification
  */
-async function hashMessage(message: string): Promise<Uint8Array> {
+async function _hashMessage(message: string): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const messageBytes = encoder.encode(message);
   const prefix = encoder.encode(`\x19Ethereum Signed Message:\n${messageBytes.length}`);
@@ -48,8 +50,10 @@ function hexToBytes(hex: string): Uint8Array {
 
 /**
  * Convert Uint8Array to hex string
+ *
+ * @internal Reserved for future client-side verification
  */
-function bytesToHex(bytes: Uint8Array): string {
+function _bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
