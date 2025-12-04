@@ -56,11 +56,11 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 ### Using the SDK
 
 ```bash
-npm install @signinwithethos/js
+npm install @thebbz/siwe-ethos
 ```
 
 ```typescript
-import { EthosWalletAuth } from '@signinwithethos/js';
+import { EthosWalletAuth } from '@thebbz/siwe-ethos';
 
 // Initialize
 const auth = EthosWalletAuth.init({

@@ -34,7 +34,7 @@ If applicable, add screenshots to help explain your problem.
 - **OS**: [e.g., macOS 14, Windows 11, Ubuntu 22.04]
 - **Browser**: [e.g., Chrome 120, Firefox 121, Safari 17]
 - **Node.js version**: [e.g., 20.10.0]
-- **Package version**: [e.g., @signinwithethos/js@1.0.0]
+- **Package version**: [e.g., @thebbz/siwe-ethos@1.0.0]
 
 ## Wallet Information (if applicable)
 

@@ -1,15 +1,15 @@
-# @signinwithethos/js
+# @thebbz/siwe-ethos
 
 JavaScript SDK for integrating "Sign in with Ethos" authentication into any web application using wallet-based authentication (SIWE - Sign-In with Ethereum).
 
 ## Installation
 
 ```bash
-npm install @signinwithethos/js
+npm install @thebbz/siwe-ethos
 # or
-yarn add @signinwithethos/js
+yarn add @thebbz/siwe-ethos
 # or
-pnpm add @signinwithethos/js
+pnpm add @thebbz/siwe-ethos
 ```
 
 ## Quick Start
@@ -21,7 +21,7 @@ Users connect their Ethereum wallet, sign a message to prove ownership, and are 
 #### 1. Initialize the SDK
 
 ```javascript
-import { EthosWalletAuth } from '@signinwithethos/js';
+import { EthosWalletAuth } from '@thebbz/siwe-ethos';
 
 const auth = EthosWalletAuth.init({
   // Optional: customize settings
@@ -186,7 +186,7 @@ interface EthosUser {
 ### Error Handling
 
 ```typescript
-import { EthosAuthError } from '@signinwithethos/js';
+import { EthosAuthError } from '@thebbz/siwe-ethos';
 
 try {
   const result = await auth.signIn(address, signMessage);

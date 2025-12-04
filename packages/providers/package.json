@@ -1,6 +1,6 @@
 {
-  "name": "@signinwithethos/providers",
-  "version": "0.2.0",
+  "name": "@thebbz/siwe-ethos-providers",
+  "version": "0.1.0",
   "description": "SIWE (Sign-In with Ethereum) authentication utilities for Sign in with Ethos",
   "license": "MIT",
   "author": "thebbz",
@@ -29,11 +29,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    },
-    "./siwe": {
-      "types": "./dist/siwe/index.d.ts",
-      "import": "./dist/siwe/index.mjs",
-      "require": "./dist/siwe/index.js"
     }
   },
   "files": [

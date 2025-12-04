@@ -7,17 +7,17 @@ This guide covers integrating Sign in with Ethos into your web application using
 ### npm/pnpm/yarn
 
 ```bash
-npm install @signinwithethos/js
+npm install @thebbz/siwe-ethos
 # or
-pnpm add @signinwithethos/js
+pnpm add @thebbz/siwe-ethos
 # or
-yarn add @signinwithethos/js
+yarn add @thebbz/siwe-ethos
 ```
 
 ### CDN
 
 ```html
-<script src="https://unpkg.com/@signinwithethos/js"></script>
+<script src="https://unpkg.com/@thebbz/siwe-ethos"></script>
 ```
 
 The SDK will be available as `window.EthosWalletAuth`.
@@ -27,7 +27,7 @@ The SDK will be available as `window.EthosWalletAuth`.
 ### 1. Initialize the SDK
 
 ```typescript
-import { EthosWalletAuth } from '@signinwithethos/js';
+import { EthosWalletAuth } from '@thebbz/siwe-ethos';
 
 const auth = EthosWalletAuth.init({
   authServerUrl: 'https://ethos.thebbz.xyz', // or your self-hosted URL
@@ -93,7 +93,7 @@ function SignInButton() {
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { EthosWalletAuth } from '@signinwithethos/js';
+import { EthosWalletAuth } from '@thebbz/siwe-ethos';
 
 const config = createConfig({
   chains: [mainnet],
@@ -190,7 +190,7 @@ export function SignInWithEthos({ onSuccess }: { onSuccess?: (user: any) => void
 <head>
   <title>Sign in with Ethos</title>
   <script src="https://unpkg.com/ethers@6/dist/ethers.umd.min.js"></script>
-  <script src="https://unpkg.com/@signinwithethos/js"></script>
+  <script src="https://unpkg.com/@thebbz/siwe-ethos"></script>
 </head>
 <body>
   <button id="connect-btn">Connect Wallet</button>
@@ -253,7 +253,7 @@ export function SignInWithEthos({ onSuccess }: { onSuccess?: (user: any) => void
 Set default configuration that applies to all SDK instances. This is useful for setting your auth server URL once at app startup.
 
 ```typescript
-import { setGlobalConfig, EthosWalletAuth } from '@signinwithethos/js';
+import { setGlobalConfig, EthosWalletAuth } from '@thebbz/siwe-ethos';
 
 // Set once at app initialization (e.g., in _app.tsx or main.ts)
 setGlobalConfig({
@@ -280,7 +280,7 @@ const auth = EthosWalletAuth.init({
 **Other global config functions:**
 
 ```typescript
-import { getGlobalConfig, resetGlobalConfig } from '@signinwithethos/js';
+import { getGlobalConfig, resetGlobalConfig } from '@thebbz/siwe-ethos';
 
 // Get current global config
 const config = getGlobalConfig();

@@ -190,7 +190,7 @@ let globalConfig: Partial<WalletAuthConfig> = {};
  * @example
  * ```js
  * // Set once at app initialization
- * import { setGlobalConfig } from '@signinwithethos/js';
+ * import { setGlobalConfig } from '@thebbz/siwe-ethos';
  * 
  * setGlobalConfig({
  *   authServerUrl: process.env.NEXT_PUBLIC_ETHOS_AUTH_URL,

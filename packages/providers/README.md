@@ -1,13 +1,13 @@
-# @signinwithethos/providers
+# @thebbz/siwe-ethos-providers
 
 SIWE (Sign-In with Ethereum) authentication utilities for Sign in with Ethos.
 
-This package is primarily used internally by the Sign in with Ethos server. For client-side integration, use [`@signinwithethos/js`](https://www.npmjs.com/package/@signinwithethos/js).
+This package is primarily used internally by the Sign in with Ethos server. For client-side integration, use [`@thebbz/siwe-ethos`](https://www.npmjs.com/package/@thebbz/siwe-ethos).
 
 ## Installation
 
 ```bash
-npm install @signinwithethos/providers
+npm install @thebbz/siwe-ethos-providers
 ```
 
 ## Features
@@ -25,7 +25,7 @@ import {
   formatSIWEMessage,
   verifySIWEMessage,
   generateNonce,
-} from '@signinwithethos/providers';
+} from '@thebbz/siwe-ethos-providers';
 
 // Create a SIWE message
 const message = createSIWEMessage({
@@ -71,7 +71,7 @@ const result = await verifySIWEMessage({
 
 ## Related
 
-- [@signinwithethos/js](https://www.npmjs.com/package/@signinwithethos/js) - Client SDK
+- [@thebbz/siwe-ethos](https://www.npmjs.com/package/@thebbz/siwe-ethos) - Client SDK
 - [Sign in with Ethos](https://github.com/thebbz/siwETHOS) - Full project
 
 ## License

@@ -29,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for multiple wallets: MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave
 - Ethos profile integration with credibility scores
 - REST API endpoints for authentication
-- JavaScript/TypeScript SDK (`@signinwithethos/js`)
-- Provider utilities package (`@signinwithethos/providers`)
+- JavaScript/TypeScript SDK (`@thebbz/siwe-ethos`)
+- Provider utilities package (`@thebbz/siwe-ethos-providers`)
 - Docker support for self-hosting
 - Vercel deployment configuration
 - Comprehensive documentation
