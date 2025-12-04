@@ -72,7 +72,7 @@ const result = await verifySIWEMessage({
 ## Related
 
 - [@signinwithethos/js](https://www.npmjs.com/package/@signinwithethos/js) - Client SDK
-- [Sign in with Ethos](https://github.com/thebbz/signinwithethos) - Full project
+- [Sign in with Ethos](https://github.com/thebbz/siwETHOS) - Full project
 
 ## License
 

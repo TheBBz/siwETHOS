@@ -7,7 +7,7 @@
   "author": "thebbz",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thebbz/signinwithethos"
+    "url": "https://github.com/thebbz/siwETHOS"
   },
   "scripts": {
     "dev": "pnpm --filter @signinwithethos/server dev",

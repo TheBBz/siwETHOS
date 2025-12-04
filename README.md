@@ -90,12 +90,12 @@ function SignInButton() {
 
 #### Option 1: Vercel (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thebbz/signinwithethos)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thebbz/siwETHOS)
 
 #### Option 2: Docker
 
 ```bash
-git clone https://github.com/thebbz/signinwithethos.git
+git clone https://github.com/thebbz/siwETHOS.git
 cd signinwithethos
 cp .env.example .env
 # Edit .env with your credentials

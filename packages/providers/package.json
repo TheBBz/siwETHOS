@@ -6,12 +6,12 @@
   "author": "thebbz",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thebbz/signinwithethos",
+    "url": "https://github.com/thebbz/siwETHOS",
     "directory": "packages/providers"
   },
-  "homepage": "https://github.com/thebbz/signinwithethos#readme",
+  "homepage": "https://github.com/thebbz/siwETHOS#readme",
   "bugs": {
-    "url": "https://github.com/thebbz/signinwithethos/issues"
+    "url": "https://github.com/thebbz/siwETHOS/issues"
   },
   "keywords": [
     "ethos",

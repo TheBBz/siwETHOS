@@ -4,13 +4,13 @@
   "description": "JavaScript SDK for Sign in with Ethos authentication",
   "license": "MIT",
   "author": "thebbz",
-  "homepage": "https://github.com/thebbz/signinwithethos#readme",
+  "homepage": "https://github.com/thebbz/siwETHOS#readme",
   "bugs": {
-    "url": "https://github.com/thebbz/signinwithethos/issues"
+    "url": "https://github.com/thebbz/siwETHOS/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thebbz/signinwithethos",
+    "url": "https://github.com/thebbz/siwETHOS",
     "directory": "packages/sdk"
   },
   "keywords": [

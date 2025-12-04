@@ -40,5 +40,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Message expiration for SIWE
 - Secure session handling
 
-[Unreleased]: https://github.com/thebbz/signinwithethos/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/thebbz/signinwithethos/releases/tag/v1.0.0
+[Unreleased]: https://github.com/thebbz/siwETHOS/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/thebbz/siwETHOS/releases/tag/v1.0.0
