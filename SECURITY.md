@@ -17,9 +17,9 @@ We take the security of Sign in with Ethos seriously. If you believe you have fo
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to:
+Instead, please report them via x/twitter to:
 
-📧 **security@ethos.network**
+📧 **@thebbz**
 
 Please include the following information in your report:
 
