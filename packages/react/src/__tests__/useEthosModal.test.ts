@@ -160,4 +160,280 @@ describe('useEthosModal hook', () => {
     expect(result.current.state.selectedMethod).toBeNull();
     expect(result.current.state.error).toBeNull();
   });
+
+  describe('setView action', () => {
+    it('should directly set view to all-wallets', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setView('all-wallets');
+      });
+      
+      expect(result.current.state.view).toBe('all-wallets');
+    });
+
+    it('should directly set view to all-social', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setView('all-social');
+      });
+      
+      expect(result.current.state.view).toBe('all-social');
+    });
+
+    it('should directly set view to verifying', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setView('verifying');
+      });
+      
+      expect(result.current.state.view).toBe('verifying');
+    });
+  });
+
+  describe('setStatus view mapping', () => {
+    it('should map connecting status to connecting view', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setStatus('connecting');
+      });
+      
+      expect(result.current.state.view).toBe('connecting');
+    });
+
+    it('should map verifying status to verifying view', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setStatus('verifying');
+      });
+      
+      expect(result.current.state.view).toBe('verifying');
+    });
+
+    it('should map success status to success view', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setStatus('success');
+      });
+      
+      expect(result.current.state.view).toBe('success');
+    });
+
+    it('should map error status to error view', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setStatus('error');
+      });
+      
+      expect(result.current.state.view).toBe('error');
+    });
+  });
+
+  describe('wallet selection', () => {
+    it('should select rabby wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectWallet('rabby');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'wallet', id: 'rabby' });
+    });
+
+    it('should select phantom wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectWallet('phantom');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'wallet', id: 'phantom' });
+    });
+
+    it('should select coinbase wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectWallet('coinbase');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'wallet', id: 'coinbase' });
+    });
+
+    it('should select brave wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectWallet('brave');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'wallet', id: 'brave' });
+    });
+
+    it('should select zerion wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectWallet('zerion');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'wallet', id: 'zerion' });
+    });
+
+    it('should clear error when selecting wallet', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setError('Previous error');
+      });
+      
+      act(() => {
+        result.current.actions.selectWallet('metamask');
+      });
+      
+      expect(result.current.state.error).toBeNull();
+    });
+  });
+
+  describe('social provider selection', () => {
+    it('should select discord provider', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectSocial('discord');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'social', id: 'discord' });
+    });
+
+    it('should select telegram provider', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectSocial('telegram');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'social', id: 'telegram' });
+    });
+
+    it('should select farcaster provider', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.selectSocial('farcaster');
+      });
+      
+      expect(result.current.state.selectedMethod).toEqual({ type: 'social', id: 'farcaster' });
+    });
+
+    it('should clear error when selecting social', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.setError('Previous error');
+      });
+      
+      act(() => {
+        result.current.actions.selectSocial('twitter');
+      });
+      
+      expect(result.current.state.error).toBeNull();
+    });
+  });
+
+  describe('complete authentication flows', () => {
+    it('should handle wallet success flow', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      // Open modal
+      act(() => result.current.actions.open());
+      expect(result.current.state.isOpen).toBe(true);
+      
+      // Select wallet
+      act(() => result.current.actions.selectWallet('metamask'));
+      expect(result.current.state.status).toBe('connecting');
+      
+      // Signing
+      act(() => result.current.actions.setStatus('signing'));
+      expect(result.current.state.view).toBe('signing');
+      
+      // Verifying
+      act(() => result.current.actions.setStatus('verifying'));
+      expect(result.current.state.view).toBe('verifying');
+      
+      // Success
+      const mockUser = {
+        sub: 'ethos:456',
+        name: 'Wallet User',
+        picture: 'https://example.com/pic.png',
+        ethosProfileId: 456,
+        ethosUsername: 'walletuser',
+        ethosScore: 900,
+        ethosStatus: 'ACTIVE',
+        ethosAttestations: ['verified'],
+        authMethod: 'wallet' as const,
+      };
+      
+      act(() => result.current.actions.setSuccess(mockUser));
+      
+      expect(result.current.state.view).toBe('success');
+      expect(result.current.state.user?.name).toBe('Wallet User');
+    });
+
+    it('should handle social auth error and retry', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      // Open and select social
+      act(() => {
+        result.current.actions.open();
+        result.current.actions.selectSocial('discord');
+      });
+      
+      // Error occurs
+      act(() => result.current.actions.setError('OAuth failed'));
+      expect(result.current.state.view).toBe('error');
+      expect(result.current.state.error).toBe('OAuth failed');
+      
+      // Go back
+      act(() => result.current.actions.goBack());
+      expect(result.current.state.view).toBe('main');
+      expect(result.current.state.error).toBeNull();
+      
+      // Try again
+      act(() => result.current.actions.selectSocial('twitter'));
+      expect(result.current.state.selectedMethod?.id).toBe('twitter');
+    });
+
+    it('should handle modal close during flow', () => {
+      const { result } = renderHook(() => useEthosModal());
+      
+      act(() => {
+        result.current.actions.open();
+        result.current.actions.selectWallet('metamask');
+        result.current.actions.setStatus('signing');
+      });
+      
+      act(() => result.current.actions.close());
+      
+      expect(result.current.state.isOpen).toBe(false);
+    });
+  });
+
+  describe('action memoization', () => {
+    it('should maintain stable action references', () => {
+      const { result, rerender } = renderHook(() => useEthosModal());
+      
+      const initialActions = result.current.actions;
+      
+      rerender();
+      
+      expect(result.current.actions).toBe(initialActions);
+    });
+  });
 });

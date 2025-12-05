@@ -222,8 +222,8 @@ URI: https://yourapp.com
 Version: 1
 Chain ID: 1
 Nonce: abc123...
-Issued At: 2024-01-01T00:00:00.000Z
-Expiration Time: 2024-01-02T00:00:00.000Z
+Issued At: 2025-12-05T12:00:00.000Z
+Expiration Time: 2025-12-05T12:05:00.000Z
 Resources:
 - https://ethos.network
 ```

@@ -7,20 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Official Ethos favicon and brand identity
-- Improved landing page with step-by-step integration guide
-- Official wallet connector logos (MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave)
-- Open Graph and Twitter card metadata
-- `CODE_OF_CONDUCT.md` (Contributor Covenant)
-- `SECURITY.md` with vulnerability reporting guidelines
-- GitHub issue and PR templates
-
-### Changed
-- Updated brand colors to official Ethos palette (#2E7BC3 primary)
-- Improved Quick Start documentation with clearer examples
-- Unified color scheme across all components
-
 ## [1.1.0] - 2025-12-05
 
 ### Added
@@ -30,10 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Discord, Twitter, and Telegram OAuth support
 - Sign out animation and flow
 - UTF-8 emoji support in OAuth callbacks
+- Official Ethos favicon and brand identity
+- Improved landing page with step-by-step integration guide
+- Official wallet connector logos (MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave)
+- Open Graph and Twitter card metadata
+- `CODE_OF_CONDUCT.md` (Contributor Covenant)
+- `SECURITY.md` with vulnerability reporting guidelines
+- GitHub issue and PR templates
 
 ### Changed
 - Improved OAuth callback handling with proper base64url decoding
 - Enhanced error handling across all authentication flows
+- Updated brand colors to official Ethos palette (#2E7BC3 primary)
+- Improved Quick Start documentation with clearer examples
+- Unified color scheme across all components
+
+### Fixed
+- Fixed ESLint unused variable warnings in SDK and React packages
+- Updated documentation dates to 2025
+- Fixed copyright year in LICENSE
+- Added ESLint configuration to React package
+- Fixed TypeScript type annotations for better lint compliance
+- Converted deprecated empty interface to type alias (WalletAuthResult)
+- Updated example timestamps in documentation to current date
 
 ## [1.0.0] - 2025-12-05
 

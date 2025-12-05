@@ -2,7 +2,7 @@
  * Sign in with Ethos - React Types
  */
 
-import type { AuthResult, EthosUser, SocialProvider } from '@thebbz/siwe-ethos';
+import type { AuthResult, EthosUser } from '@thebbz/siwe-ethos';
 
 // ============================================================================
 // Login Method Types

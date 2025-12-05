@@ -3,7 +3,7 @@
  */
 
 import { WalletButton } from './WalletButton';
-import type { WalletListProps, WalletConfig, WalletId, WALLETS } from '../types';
+import type { WalletListProps } from '../types';
 
 /**
  * List of wallet options for selection

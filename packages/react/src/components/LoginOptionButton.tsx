@@ -3,7 +3,7 @@
  * With glassmorphism styling
  */
 
-import type { LoginOptionButtonProps, ModalTheme, DEFAULT_THEME } from '../types';
+import type { LoginOptionButtonProps, ModalTheme } from '../types';
 
 const defaultTheme: ModalTheme = {
   modalBg: '#1c1c1e',
@@ -23,11 +23,11 @@ const defaultTheme: ModalTheme = {
  * Features glassmorphism effect on hover
  */
 export function LoginOptionButton({
-  id,
+  id: _id,
   name,
   icon,
   onClick,
-  isAvailable = true,
+  isAvailable: _isAvailable = true,
   showIndicator = false,
   disabled = false,
   badge,

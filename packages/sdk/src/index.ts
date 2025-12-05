@@ -133,7 +133,7 @@ export interface VerifyParams {
  * Result from successful wallet verification
  * @deprecated Use AuthResult instead
  */
-export interface WalletAuthResult extends AuthResult {}
+export type WalletAuthResult = AuthResult;
 
 /**
  * User profile from authentication

@@ -10,8 +10,6 @@ import type {
   ConnectionStatus, 
   WalletId,
   SocialProviderId,
-  LoginMethodType,
-  LoginMethodId,
   EthosUser 
 } from '../types';
 

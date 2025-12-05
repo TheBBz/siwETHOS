@@ -2,7 +2,7 @@
  * Error View Component
  */
 
-import type { ErrorViewProps, ModalTheme } from '../types';
+import type { ErrorViewProps } from '../types';
 import { DEFAULT_THEME } from '../types';
 
 /**

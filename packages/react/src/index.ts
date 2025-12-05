@@ -108,3 +108,18 @@ export {
   getScoreColor,
   getScoreLabel,
 } from './types';
+
+// Wallet/OAuth utilities
+export {
+  getWalletProvider,
+  connectWallet,
+  signMessage,
+  decodeBase64Url,
+  parseOAuthError,
+  formatOAuthError,
+  clearOAuthParams,
+  parseOAuthCode,
+  hasOAuthCallback,
+  getOAuthParams,
+} from './utils';
+export type { OAuthCallbackResult } from './utils';

@@ -1,8 +1,8 @@
 /**
  * Provider Unit Tests
  * 
- * Tests for Discord, Telegram, and Farcaster providers
- * as well as score validation utilities.
+ * Comprehensive tests for Discord, Telegram, and Farcaster providers
+ * as well as SIWE utilities and score validation.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -21,7 +21,298 @@ import {
   getScoreTier,
   EthosScoreInsufficientError,
   SCORE_TIERS,
+  // SIWE utilities
+  generateNonce,
+  isValidNonceFormat,
+  createTimedNonce,
+  isNonceExpired,
+  isValidEthereumAddress,
+  checksumAddress,
+  addressesEqual,
+  createSIWEMessage,
+  formatSIWEMessage,
+  parseSIWEMessage,
 } from '../index';
+
+// ============================================================================
+// SIWE Nonce Utilities Tests
+// ============================================================================
+
+describe('Nonce Utilities', () => {
+  describe('generateNonce', () => {
+    it('should generate nonce of default length (32)', () => {
+      const nonce = generateNonce();
+      expect(nonce).toHaveLength(32);
+    });
+
+    it('should generate nonce of custom length', () => {
+      const nonce = generateNonce(16);
+      expect(nonce).toHaveLength(16);
+    });
+
+    it('should generate alphanumeric characters only', () => {
+      const nonce = generateNonce(100);
+      expect(nonce).toMatch(/^[a-zA-Z0-9]+$/);
+    });
+
+    it('should generate unique nonces', () => {
+      const nonces = new Set(Array.from({ length: 100 }, () => generateNonce()));
+      expect(nonces.size).toBe(100);
+    });
+  });
+
+  describe('isValidNonceFormat', () => {
+    it('should return true for valid alphanumeric nonce', () => {
+      expect(isValidNonceFormat('abc123ABC456')).toBe(true);
+    });
+
+    it('should return false for empty string', () => {
+      expect(isValidNonceFormat('')).toBe(false);
+    });
+
+    it('should return false for short nonce (default min 8)', () => {
+      expect(isValidNonceFormat('abc1234')).toBe(false);
+      expect(isValidNonceFormat('abc12345')).toBe(true);
+    });
+
+    it('should respect custom minimum length', () => {
+      expect(isValidNonceFormat('abc', 3)).toBe(true);
+      expect(isValidNonceFormat('ab', 3)).toBe(false);
+    });
+
+    it('should return false for non-alphanumeric characters', () => {
+      expect(isValidNonceFormat('abc-123-def')).toBe(false);
+      expect(isValidNonceFormat('abc_123_def')).toBe(false);
+      expect(isValidNonceFormat('abc 123 def')).toBe(false);
+      expect(isValidNonceFormat('abc!@#123')).toBe(false);
+    });
+  });
+
+  describe('createTimedNonce', () => {
+    it('should create nonce with expiration', () => {
+      const result = createTimedNonce();
+      expect(result.nonce).toHaveLength(32);
+      expect(result.expiresAt).toBeGreaterThan(Date.now());
+    });
+
+    it('should respect custom TTL', () => {
+      const before = Date.now();
+      const result = createTimedNonce(60); // 60 seconds
+      const after = Date.now();
+      
+      expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60000);
+      expect(result.expiresAt).toBeLessThanOrEqual(after + 60000 + 100);
+    });
+  });
+
+  describe('isNonceExpired', () => {
+    it('should return false for future expiration', () => {
+      const futureTimestamp = Date.now() + 60000;
+      expect(isNonceExpired(futureTimestamp)).toBe(false);
+    });
+
+    it('should return true for past expiration', () => {
+      const pastTimestamp = Date.now() - 1000;
+      expect(isNonceExpired(pastTimestamp)).toBe(true);
+    });
+  });
+});
+
+// ============================================================================
+// Ethereum Address Utilities Tests
+// ============================================================================
+
+describe('Address Utilities', () => {
+  describe('isValidEthereumAddress', () => {
+    it('should return true for valid address', () => {
+      expect(isValidEthereumAddress('0x1234567890123456789012345678901234567890')).toBe(true);
+    });
+
+    it('should return true for checksummed address', () => {
+      expect(isValidEthereumAddress('0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B')).toBe(true);
+    });
+
+    it('should return false for address without 0x prefix', () => {
+      expect(isValidEthereumAddress('1234567890123456789012345678901234567890')).toBe(false);
+    });
+
+    it('should return false for address with wrong length', () => {
+      expect(isValidEthereumAddress('0x123456789012345678901234567890123456789')).toBe(false);
+      expect(isValidEthereumAddress('0x12345678901234567890123456789012345678901')).toBe(false);
+    });
+
+    it('should return false for address with invalid characters', () => {
+      expect(isValidEthereumAddress('0xGGGG567890123456789012345678901234567890')).toBe(false);
+    });
+
+    it('should return false for empty or null', () => {
+      expect(isValidEthereumAddress('')).toBe(false);
+      expect(isValidEthereumAddress(null as any)).toBe(false);
+      expect(isValidEthereumAddress(undefined as any)).toBe(false);
+    });
+  });
+
+  describe('checksumAddress', () => {
+    it('should normalize address to lowercase', () => {
+      const result = checksumAddress('0xAB5801A7D398351B8BE11C439E05C5B3259AEC9B');
+      expect(result).toBe('0xab5801a7d398351b8be11c439e05c5b3259aec9b');
+    });
+
+    it('should throw for invalid address', () => {
+      expect(() => checksumAddress('invalid')).toThrow('Invalid Ethereum address');
+    });
+  });
+
+  describe('addressesEqual', () => {
+    it('should return true for same address different case', () => {
+      expect(addressesEqual(
+        '0xAB5801A7D398351B8BE11C439E05C5B3259AEC9B',
+        '0xab5801a7d398351b8be11c439e05c5b3259aec9b'
+      )).toBe(true);
+    });
+
+    it('should return false for different addresses', () => {
+      expect(addressesEqual(
+        '0x1234567890123456789012345678901234567890',
+        '0xab5801a7d398351b8be11c439e05c5b3259aec9b'
+      )).toBe(false);
+    });
+
+    it('should return false for invalid addresses', () => {
+      expect(addressesEqual('invalid', '0x1234567890123456789012345678901234567890')).toBe(false);
+      expect(addressesEqual('0x1234567890123456789012345678901234567890', 'invalid')).toBe(false);
+    });
+  });
+});
+
+// ============================================================================
+// SIWE Message Tests
+// ============================================================================
+
+describe('SIWE Message', () => {
+  describe('createSIWEMessage', () => {
+    it('should create message with required fields', () => {
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+      });
+
+      expect(message.domain).toBe('example.com');
+      expect(message.address).toBe('0x1234567890123456789012345678901234567890');
+      expect(message.uri).toBe('https://example.com');
+      expect(message.nonce).toBe('abc123def456');
+      expect(message.chainId).toBe(1);
+      expect(message.version).toBe('1');
+      expect(message.issuedAt).toBeDefined();
+    });
+
+    it('should include optional statement', () => {
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        statement: 'Sign in to Example App',
+      });
+
+      expect(message.statement).toBe('Sign in to Example App');
+    });
+
+    it('should include optional expirationTime', () => {
+      const expTime = '2025-12-31T23:59:59.000Z';
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        expirationTime: expTime,
+      });
+
+      expect(message.expirationTime).toBe(expTime);
+    });
+
+    it('should include optional resources', () => {
+      const resources = ['https://api.example.com', 'https://storage.example.com'];
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        resources,
+      });
+
+      expect(message.resources).toEqual(resources);
+    });
+  });
+
+  describe('formatSIWEMessage', () => {
+    it('should format message as EIP-4361 string', () => {
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        statement: 'Sign in with Ethos',
+      });
+
+      const formatted = formatSIWEMessage(message);
+
+      expect(formatted).toContain('example.com wants you to sign in');
+      expect(formatted).toContain('0x1234567890123456789012345678901234567890');
+      expect(formatted).toContain('Sign in with Ethos');
+      expect(formatted).toContain('URI: https://example.com');
+      expect(formatted).toContain('Nonce: abc123def456');
+      expect(formatted).toContain('Chain ID: 1');
+    });
+
+    it('should include resources in formatted message', () => {
+      const message = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        resources: ['https://ethos.network'],
+      });
+
+      const formatted = formatSIWEMessage(message);
+      expect(formatted).toContain('Resources:');
+      expect(formatted).toContain('- https://ethos.network');
+    });
+  });
+
+  describe('parseSIWEMessage', () => {
+    it('should parse formatted message back to object', () => {
+      const original = createSIWEMessage({
+        domain: 'example.com',
+        address: '0x1234567890123456789012345678901234567890',
+        uri: 'https://example.com',
+        nonce: 'abc123def456',
+        chainId: 1,
+        statement: 'Sign in with Ethos',
+      });
+
+      const formatted = formatSIWEMessage(original);
+      const parsed = parseSIWEMessage(formatted);
+
+      expect(parsed.domain).toBe('example.com');
+      expect(parsed.address).toBe('0x1234567890123456789012345678901234567890');
+      expect(parsed.nonce).toBe('abc123def456');
+      expect(parsed.chainId).toBe(1);
+    });
+
+    it('should throw for invalid message format', () => {
+      expect(() => parseSIWEMessage('This is not a SIWE message')).toThrow();
+    });
+  });
+});
 
 // ============================================================================
 // Discord Provider Tests

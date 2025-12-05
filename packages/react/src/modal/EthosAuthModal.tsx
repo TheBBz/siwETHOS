@@ -17,87 +17,18 @@ import { useEthosModal } from '../hooks/useEthosModal';
 import { useRecentLogins } from '../hooks/useRecentLogins';
 import { checkWalletInstalled } from '../hooks/useWalletDetection';
 import { WALLET_ICONS, SOCIAL_ICONS } from '../components/Icons';
+import { 
+  getWalletProvider, 
+  parseOAuthCode, 
+  formatOAuthError, 
+  clearOAuthParams 
+} from '../utils';
 import type { 
   EthosAuthModalProps, 
   WalletId,
   SocialProviderId,
-  EthosUser,
 } from '../types';
 import { WALLETS, SOCIAL_PROVIDERS, DEFAULT_THEME } from '../types';
-
-// Ethereum provider type
-interface EthereumProvider {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  isMetaMask?: boolean;
-  isRabby?: boolean;
-  isBraveWallet?: boolean;
-  isCoinbaseWallet?: boolean;
-  providers?: EthereumProvider[];
-}
-
-/**
- * Get the provider for a specific wallet
- */
-function getWalletProvider(walletId: WalletId): EthereumProvider | null {
-  if (typeof window === 'undefined') return null;
-
-  const ethereum = (window as { ethereum?: EthereumProvider }).ethereum;
-  const phantom = (window as { phantom?: { ethereum?: EthereumProvider } }).phantom;
-  const zerionWallet = (window as { zerionWallet?: EthereumProvider }).zerionWallet;
-
-  switch (walletId) {
-    case 'metamask': {
-      if (ethereum?.providers) {
-        const provider = ethereum.providers.find(
-          p => p.isMetaMask && !p.isRabby && !p.isBraveWallet
-        );
-        if (provider) return provider;
-      }
-      if (ethereum?.isMetaMask && !ethereum?.isRabby && !ethereum?.isBraveWallet) {
-        return ethereum;
-      }
-      return null;
-    }
-
-    case 'rabby': {
-      if (ethereum?.providers) {
-        const provider = ethereum.providers.find(p => p.isRabby);
-        if (provider) return provider;
-      }
-      if (ethereum?.isRabby) return ethereum;
-      return null;
-    }
-
-    case 'phantom': {
-      return phantom?.ethereum ?? null;
-    }
-
-    case 'zerion': {
-      return zerionWallet ?? null;
-    }
-
-    case 'coinbase': {
-      if (ethereum?.providers) {
-        const provider = ethereum.providers.find(p => p.isCoinbaseWallet);
-        if (provider) return provider;
-      }
-      if (ethereum?.isCoinbaseWallet) return ethereum;
-      return null;
-    }
-
-    case 'brave': {
-      if (ethereum?.providers) {
-        const provider = ethereum.providers.find(p => p.isBraveWallet);
-        if (provider) return provider;
-      }
-      if (ethereum?.isBraveWallet) return ethereum;
-      return null;
-    }
-
-    default:
-      return null;
-  }
-}
 
 /**
  * Ethos Auth Modal
@@ -173,23 +104,16 @@ export function EthosAuthModal({
 
     const url = new URL(window.location.href);
     const code = url.searchParams.get('code');
-    const stateParam = url.searchParams.get('state');
     const errorParam = url.searchParams.get('error');
     const errorDescription = url.searchParams.get('error_description');
 
     // Handle OAuth errors first
     if (errorParam) {
       // Clean up URL parameters immediately
-      url.searchParams.delete('error');
-      url.searchParams.delete('error_description');
-      url.searchParams.delete('state');
-      window.history.replaceState({}, '', url.pathname + (url.search || ''));
+      clearOAuthParams(url);
 
-      // Show error in modal
-      const errorMessage = errorDescription || 
-        (errorParam === 'no_ethos_profile' 
-          ? 'No Ethos profile found. Please connect your account on ethos.network first.'
-          : `Authentication failed: ${errorParam}`);
+      // Show error in modal using utility
+      const errorMessage = formatOAuthError(errorParam, errorDescription);
       
       actions.setError(errorMessage);
       onError?.(new Error(errorMessage));
@@ -202,110 +126,44 @@ export function EthosAuthModal({
     actions.setView('verifying');
     actions.setStatus('verifying');
 
-    // Helper to decode base64url with proper UTF-8 support
-    const decodeBase64Url = (str: string): string => {
-      // Convert base64url to base64
-      const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-      // Decode base64 to binary string
-      const binary = atob(base64);
-      // Convert binary string to UTF-8
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return new TextDecoder('utf-8').decode(bytes);
-    };
-
-    // Parse the auth code (it's a base64url encoded JWT)
-    // Small delay to show the "Confirming" state like Privy does
+    // Parse the auth code using extracted utility
     const processCallback = async () => {
-      try {
-        // Parse the outer JSON wrapper first
-        let payload: Record<string, unknown>;
-        
-        // The code could be a JSON object encoded as base64url
-        try {
-          const decoded = decodeBase64Url(code);
-          const parsed = JSON.parse(decoded);
-          
-          // If it's our wrapper format with user data
-          if (parsed.user) {
-            payload = parsed.user;
-          } else if (parsed.accessToken) {
-            // Decode the inner JWT
-            const [, innerPayloadB64] = parsed.accessToken.split('.');
-            if (innerPayloadB64) {
-              payload = JSON.parse(decodeBase64Url(innerPayloadB64));
-            } else {
-              payload = parsed;
-            }
-          } else {
-            payload = parsed;
-          }
-        } catch {
-          // Try parsing as JWT directly
-          const [, payloadB64] = code.split('.');
-          if (!payloadB64) return;
-          payload = JSON.parse(decodeBase64Url(payloadB64));
-        }
+      // Small artificial delay to show the verifying animation (like Privy)
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Small artificial delay to show the verifying animation (like Privy)
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Extract user data from the token (matching EthosUser type)
-        const authMethod = (payload.authMethod || payload.socialProvider || 'discord') as 'wallet' | 'twitter' | 'discord' | 'telegram' | 'farcaster';
-        const socialProvider = (payload.socialProvider || payload.authMethod) as 'twitter' | 'discord' | 'telegram' | 'farcaster' | undefined;
-        
-        // Generate profile URL if not provided in payload
-        // Format: https://app.ethos.network/profile/{provider}/{username}
-        const provider = (payload.socialProvider as string) || (payload.authMethod as string) || 'eth';
-        const profileUrl = (payload.profileUrl as string) || 
-          `https://app.ethos.network/profile/${provider}/${(payload.ethosUsername as string) || (payload.ethosProfileId as number)}`;
-        
-        const user: EthosUser = {
-          sub: (payload.sub as string) || `ethos:${(payload as Record<string, unknown>).ethosProfileId || 0}`,
-          name: (payload.name as string) || '',
-          picture: (payload.picture as string) || null,
-          ethosProfileId: (payload.ethosProfileId as number) || 0,
-          ethosUsername: (payload.ethosUsername as string) || null,
-          ethosScore: (payload.ethosScore as number) || 0,
-          ethosStatus: (payload.ethosStatus as string) || 'UNKNOWN',
-          ethosAttestations: (payload.ethosAttestations as string[]) || [],
-          authMethod,
-          socialProvider,
-          socialId: (payload.socialId as string) || (payload.sub as string),
-          profileUrl,
-        };
-
-        // Clean up URL parameters
-        url.searchParams.delete('code');
-        url.searchParams.delete('state');
-        window.history.replaceState({}, '', url.pathname + (url.search || ''));
-
-        // Save to recent logins
-        const providerId = (payload.socialProvider || payload.authMethod || 'discord') as SocialProviderId;
-        addRecentLogin({
-          type: 'social',
-          id: providerId,
-          name: SOCIAL_PROVIDERS[providerId]?.name || String(providerId),
-          identifier: user.ethosUsername || user.name || user.socialId,
-        });
-
-        // Call onSuccess with the auth result
-        const result: AuthResult = {
-          accessToken: code,
-          tokenType: 'Bearer',
-          expiresIn: (payload.exp as number) ? (payload.exp as number) - Math.floor(Date.now() / 1000) : 3600,
-          user,
-        };
-
-        // Update state and notify parent - show success view
-        actions.setSuccess(user);
-        onSuccess?.(result);
-      } catch (e) {
-        console.error('[EthosAuthModal] Failed to parse OAuth callback:', e);
-        actions.setError('Failed to verify authentication');
+      const parseResult = parseOAuthCode(code);
+      
+      if (!parseResult.success || !parseResult.user) {
+        console.error('[EthosAuthModal] Failed to parse OAuth callback:', parseResult.error);
+        actions.setError(parseResult.error || 'Failed to verify authentication');
+        return;
       }
+
+      const user = parseResult.user;
+
+      // Clean up URL parameters
+      clearOAuthParams(url);
+
+      // Save to recent logins
+      const providerId = (user.socialProvider || user.authMethod || 'discord') as SocialProviderId;
+      addRecentLogin({
+        type: 'social',
+        id: providerId,
+        name: SOCIAL_PROVIDERS[providerId]?.name || String(providerId),
+        identifier: user.ethosUsername || user.name || user.socialId,
+      });
+
+      // Call onSuccess with the auth result
+      const result: AuthResult = {
+        accessToken: parseResult.accessToken!,
+        tokenType: 'Bearer',
+        expiresIn: parseResult.expiresIn || 3600,
+        user,
+      };
+
+      // Update state and notify parent - show success view
+      actions.setSuccess(user);
+      onSuccess?.(result);
     };
 
     processCallback();

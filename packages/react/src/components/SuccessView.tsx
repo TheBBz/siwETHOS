@@ -3,7 +3,7 @@
  * Matches the v1 design with "Connected" header and profile card
  */
 
-import type { SuccessViewProps, ModalTheme } from '../types';
+import type { SuccessViewProps } from '../types';
 import { getScoreColor, getScoreLabel, DEFAULT_THEME } from '../types';
 
 /**

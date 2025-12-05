@@ -12,6 +12,7 @@ import EthosAuth, {
   resetGlobalConfig,
   formatSIWEMessage,
   createSIWEMessage,
+  EthosAuthError,
   DEFAULTS,
   type EthosAuthConfig,
   type WalletAuthConfig,
@@ -284,10 +285,10 @@ describe('EthosAuth', () => {
 describe('TypeScript Types', () => {
   it('should have correct AuthMethod types', () => {
     // These are compile-time checks - if they compile, they pass
-    const wallet: 'wallet' = 'wallet';
-    const discord: 'discord' = 'discord';
-    const telegram: 'telegram' = 'telegram';
-    const farcaster: 'farcaster' = 'farcaster';
+    const wallet = 'wallet' as const;
+    const discord = 'discord' as const;
+    const telegram = 'telegram' as const;
+    const farcaster = 'farcaster' as const;
     
     expect(wallet).toBe('wallet');
     expect(discord).toBe('discord');
@@ -315,5 +316,255 @@ describe('TypeScript Types', () => {
     
     expect(baseConfig.minScore).toBe(500);
     expect(walletConfig.chainId).toBe(1);
+  });
+});
+
+// ============================================================================
+// SIWE Message Edge Cases
+// ============================================================================
+
+describe('SIWE Message Edge Cases', () => {
+  it('should create message without optional fields', () => {
+    const message = createSIWEMessage({
+      domain: 'example.com',
+      address: '0x1234567890123456789012345678901234567890',
+      uri: 'https://example.com',
+      nonce: 'test-nonce',
+    });
+
+    expect(message.chainId).toBe(1); // Default chain ID
+    expect(message.statement).toBeUndefined();
+    expect(message.expirationTime).toBeUndefined();
+    expect(message.requestId).toBeUndefined();
+    expect(message.resources).toBeUndefined();
+  });
+
+  it('should include requestId in formatted message when present', () => {
+    const message = createSIWEMessage({
+      domain: 'example.com',
+      address: '0x1234567890123456789012345678901234567890',
+      uri: 'https://example.com',
+      nonce: 'test-nonce',
+      requestId: 'req-123',
+    });
+
+    const formatted = formatSIWEMessage(message);
+    expect(formatted).toContain('Request ID: req-123');
+  });
+
+  it('should include expiration time in formatted message when present', () => {
+    const message = createSIWEMessage({
+      domain: 'example.com',
+      address: '0x1234567890123456789012345678901234567890',
+      uri: 'https://example.com',
+      nonce: 'test-nonce',
+      expirationTime: '2025-12-31T23:59:59.000Z',
+    });
+
+    const formatted = formatSIWEMessage(message);
+    expect(formatted).toContain('Expiration Time: 2025-12-31T23:59:59.000Z');
+  });
+
+  it('should format message without statement correctly', () => {
+    const message = createSIWEMessage({
+      domain: 'example.com',
+      address: '0x1234567890123456789012345678901234567890',
+      uri: 'https://example.com',
+      nonce: 'test-nonce',
+    });
+
+    const formatted = formatSIWEMessage(message);
+    // Should not have two blank lines (statement would add one)
+    const lines = formatted.split('\n');
+    expect(lines[0]).toContain('wants you to sign in');
+    expect(lines[1]).toBe('0x1234567890123456789012345678901234567890');
+    expect(lines[2]).toBe(''); // Only one blank line
+    expect(lines[3]).toContain('URI:');
+  });
+
+  it('should format multiple resources correctly', () => {
+    const message = createSIWEMessage({
+      domain: 'example.com',
+      address: '0x1234567890123456789012345678901234567890',
+      uri: 'https://example.com',
+      nonce: 'test-nonce',
+      resources: [
+        'https://ethos.network',
+        'https://api.example.com/v1',
+        'ipfs://QmHash123',
+      ],
+    });
+
+    const formatted = formatSIWEMessage(message);
+    expect(formatted).toContain('Resources:');
+    expect(formatted).toContain('- https://ethos.network');
+    expect(formatted).toContain('- https://api.example.com/v1');
+    expect(formatted).toContain('- ipfs://QmHash123');
+  });
+});
+
+// ============================================================================
+// EthosAuthError Tests
+// ============================================================================
+
+describe('EthosAuthError', () => {
+  it('should create error with message, code, and details', () => {
+    const error = new EthosAuthError(
+      'Test error message',
+      'test_error_code',
+      { extra: 'data' }
+    );
+
+    expect(error.message).toBe('Test error message');
+    expect(error.code).toBe('test_error_code');
+    expect(error.details).toEqual({ extra: 'data' });
+    expect(error.name).toBe('EthosAuthError');
+  });
+
+  it('should extend Error class', () => {
+    const error = new EthosAuthError('Test', 'code');
+    
+    expect(error instanceof Error).toBe(true);
+  });
+
+  it('should work without details', () => {
+    const error = new EthosAuthError('Test message', 'code');
+    
+    expect(error.details).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// EthosWalletAuth.createMessage Tests
+// ============================================================================
+
+describe('EthosWalletAuth.createMessage', () => {
+  it('should create message with correct domain from config', () => {
+    const auth = EthosWalletAuth.init({ chainId: 137 });
+    const { message } = auth.createMessage(
+      '0x1234567890123456789012345678901234567890',
+      'test-nonce'
+    );
+
+    expect(message.chainId).toBe(137);
+    expect(message.nonce).toBe('test-nonce');
+    expect(message.version).toBe('1');
+  });
+
+  it('should include requestId in message when provided', () => {
+    const auth = EthosWalletAuth.init();
+    const { message } = auth.createMessage(
+      '0x1234567890123456789012345678901234567890',
+      'test-nonce',
+      { requestId: 'req-456' }
+    );
+
+    expect(message.requestId).toBe('req-456');
+  });
+
+  it('should return both message object and formatted string', () => {
+    const auth = EthosWalletAuth.init();
+    const result = auth.createMessage(
+      '0x1234567890123456789012345678901234567890',
+      'test-nonce'
+    );
+
+    expect(result.message).toBeDefined();
+    expect(result.messageString).toBeDefined();
+    expect(typeof result.messageString).toBe('string');
+    expect(result.messageString).toContain('test-nonce');
+  });
+
+  it('should use custom statement from config', () => {
+    const auth = EthosWalletAuth.init({ 
+      statement: 'Custom sign-in statement' 
+    });
+    const { messageString } = auth.createMessage(
+      '0x1234567890123456789012345678901234567890',
+      'test-nonce'
+    );
+
+    expect(messageString).toContain('Custom sign-in statement');
+  });
+
+  it('should include ethos.network in resources', () => {
+    const auth = EthosWalletAuth.init();
+    const { message, messageString } = auth.createMessage(
+      '0x1234567890123456789012345678901234567890',
+      'test-nonce'
+    );
+
+    expect(message.resources).toContain('https://ethos.network');
+    expect(messageString).toContain('https://ethos.network');
+  });
+});
+
+// ============================================================================
+// EthosWalletAuth URL Methods Tests  
+// ============================================================================
+
+describe('EthosWalletAuth URL Methods', () => {
+  it('should generate correct connect URL without state', () => {
+    const auth = EthosWalletAuth.init({ 
+      authServerUrl: 'https://auth.example.com' 
+    });
+    const url = auth.getConnectUrl('https://myapp.com/callback');
+
+    expect(url).toContain('https://auth.example.com/connect');
+    expect(url).toContain('redirect_uri=https%3A%2F%2Fmyapp.com%2Fcallback');
+    expect(url).not.toContain('state=');
+  });
+
+  it('should generate correct connect URL with state', () => {
+    const auth = EthosWalletAuth.init({ 
+      authServerUrl: 'https://auth.example.com' 
+    });
+    const url = auth.getConnectUrl('https://myapp.com/callback', 'csrf-token-123');
+
+    expect(url).toContain('redirect_uri=https%3A%2F%2Fmyapp.com%2Fcallback');
+    expect(url).toContain('state=csrf-token-123');
+  });
+});
+
+// ============================================================================
+// EthosAuth Social Auth URL Tests
+// ============================================================================
+
+describe('EthosAuth Social Auth URLs', () => {
+  const providers: SocialProvider[] = ['discord', 'telegram', 'farcaster'];
+
+  providers.forEach(provider => {
+    it(`should generate valid ${provider} auth URL`, () => {
+      const auth = EthosAuth.init({ 
+        authServerUrl: 'https://auth.example.com' 
+      });
+      const url = auth.getAuthUrl(provider, { 
+        redirectUri: 'https://myapp.com/callback' 
+      });
+
+      expect(url).toContain(`/auth/${provider}`);
+      expect(url).toContain('redirect_uri=https%3A%2F%2Fmyapp.com%2Fcallback');
+    });
+  });
+
+  it('should include state parameter when provided', () => {
+    const auth = EthosAuth.init();
+    const url = auth.getAuthUrl('discord', {
+      redirectUri: 'https://myapp.com/callback',
+      state: 'session-123',
+    });
+
+    expect(url).toContain('state=session-123');
+  });
+
+  it('should encode special characters in state', () => {
+    const auth = EthosAuth.init();
+    const url = auth.getAuthUrl('discord', {
+      redirectUri: 'https://myapp.com/callback',
+      state: 'state with spaces',
+    });
+
+    // URLSearchParams encodes spaces as + or %20
+    expect(url).toMatch(/state=state(\+|%20)with(\+|%20)spaces/);
   });
 });

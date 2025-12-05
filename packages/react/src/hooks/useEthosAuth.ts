@@ -4,14 +4,12 @@
 
 import { useCallback, useMemo } from 'react';
 import { EthosWalletAuth } from '@thebbz/siwe-ethos';
-import type { AuthResult } from '@thebbz/siwe-ethos';
 import { useEthosModal } from './useEthosModal';
 import { checkWalletInstalled } from './useWalletDetection';
 import type { 
   UseEthosAuthOptions, 
   UseEthosAuthReturn, 
-  WalletId,
-  EthosUser 
+  WalletId 
 } from '../types';
 import type { EthereumProvider } from '../globals.d';
 
@@ -134,7 +132,7 @@ export function useEthosAuth(options: UseEthosAuthOptions = {}): UseEthosAuthRet
   const {
     authServerUrl,
     chainId,
-    wallets: allowedWallets,
+    wallets: _allowedWallets,
     onSuccess,
     onError,
   } = options;

@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { WalletButton } from '../components/WalletButton';
 import { useWalletDetection } from '../hooks/useWalletDetection';
-import type { WalletId, WalletConfig, WALLETS } from '../types';
+import type { WalletId, WalletConfig } from '../types';
 
 interface WalletSelectViewProps {
   wallets?: WalletId[];

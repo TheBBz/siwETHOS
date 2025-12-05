@@ -12,17 +12,15 @@ import {
   SOCIAL_ICONS,
   WalletIcon,
   SocialIcon,
-  PasskeyIcon,
   EthosLogo,
   EthosShield,
 } from '../components/Icons';
 import type { 
   WalletId, 
   SocialProviderId, 
-  ModalTheme,
-  RecentLogin 
+  ModalTheme 
 } from '../types';
-import { WALLETS, SOCIAL_PROVIDERS, DEFAULT_THEME } from '../types';
+import { WALLETS, DEFAULT_THEME } from '../types';
 
 interface MainSelectViewProps {
   /** Wallets to show */
@@ -65,7 +63,7 @@ const ALL_SOCIAL: SocialProviderId[] = ['twitter', 'discord', 'telegram', 'farca
  */
 export function MainSelectView({
   wallets = MAIN_WALLETS,
-  socialProviders = ALL_SOCIAL,
+  socialProviders: _socialProviders = ALL_SOCIAL,
   showRecent = true,
   maxRecent = 3,
   onSelectWallet,

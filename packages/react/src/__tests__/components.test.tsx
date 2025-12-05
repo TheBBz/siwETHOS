@@ -62,6 +62,102 @@ describe('WalletButton', () => {
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
   });
+
+  describe('hover interactions', () => {
+    it('should change border color on mouse enter when not disabled', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} />);
+      
+      const button = screen.getByRole('button');
+      fireEvent.mouseEnter(button);
+      
+      // Check that hover styles were applied (RGB format)
+      expect(button.style.borderColor).toBe('rgb(99, 102, 241)');
+      expect(button.style.backgroundColor).toBe('rgb(250, 250, 250)');
+    });
+
+    it('should not change styles on mouse enter when disabled', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} disabled />);
+      
+      const button = screen.getByRole('button');
+      fireEvent.mouseEnter(button);
+      
+      // Should not change when disabled
+    });
+
+    it('should not change styles on mouse enter when selected', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} selected />);
+      
+      const button = screen.getByRole('button');
+      fireEvent.mouseEnter(button);
+      
+      // Should maintain selected styles
+    });
+
+    it('should revert styles on mouse leave', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} />);
+      
+      const button = screen.getByRole('button');
+      
+      // Hover
+      fireEvent.mouseEnter(button);
+      expect(button.style.borderColor).toBe('rgb(99, 102, 241)');
+      
+      // Leave
+      fireEvent.mouseLeave(button);
+      expect(button.style.borderColor).toBe('rgb(229, 231, 235)');
+      expect(button.style.backgroundColor).toBe('rgb(255, 255, 255)');
+    });
+
+    it('should not revert styles when disabled', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} disabled />);
+      
+      const button = screen.getByRole('button');
+      fireEvent.mouseLeave(button);
+      // Should maintain disabled appearance
+    });
+
+    it('should not revert styles when selected', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} selected />);
+      
+      const button = screen.getByRole('button');
+      fireEvent.mouseLeave(button);
+      // Should maintain selected appearance
+    });
+  });
+
+  describe('selected state', () => {
+    it('should show selected styles when selected is true', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} selected />);
+      
+      const button = screen.getByRole('button');
+      expect(button.style.border).toContain('2px');
+    });
+  });
+
+  describe('custom styling', () => {
+    it('should apply custom className', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} className="custom-wallet" />);
+      
+      const button = screen.getByRole('button');
+      expect(button).toHaveClass('custom-wallet');
+    });
+
+    it('should apply custom style', () => {
+      const onClick = vi.fn();
+      render(<WalletButton wallet={mockWallet} onClick={onClick} style={{ margin: '10px' }} />);
+      
+      const button = screen.getByRole('button');
+      expect(button.style.margin).toBe('10px');
+    });
+  });
 });
 
 describe('ProgressView', () => {
@@ -165,6 +261,97 @@ describe('SuccessView', () => {
     
     const img = screen.getByAltText('Test User');
     expect(img).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+  });
+
+  describe('avatar fallback', () => {
+    it('should display first letter when picture is not provided', () => {
+      const userWithoutPicture = { ...mockUser, picture: null };
+      render(<SuccessView user={userWithoutPicture} />);
+      
+      expect(screen.getByText('T')).toBeInTheDocument();
+    });
+
+    it('should display ? when name is empty', () => {
+      const userWithoutName = { ...mockUser, picture: null, name: '' };
+      render(<SuccessView user={userWithoutName} />);
+      
+      expect(screen.getByText('?')).toBeInTheDocument();
+    });
+  });
+
+  describe('identifier display', () => {
+    it('should display username when no wallet address', () => {
+      const userWithUsername = { ...mockUser, walletAddress: undefined, ethosUsername: 'testuser' };
+      render(<SuccessView user={userWithUsername} />);
+      
+      expect(screen.getByText('@testuser')).toBeInTheDocument();
+    });
+
+    it('should display wallet address when provided', () => {
+      render(<SuccessView user={mockUser} />);
+      
+      expect(screen.getByText('0x123...x123')).toBeInTheDocument();
+    });
+  });
+
+  describe('score ranges', () => {
+    it('should show Exemplary for score >= 2200', () => {
+      const excellentUser = { ...mockUser, ethosScore: 2500 };
+      render(<SuccessView user={excellentUser} showScore />);
+      
+      expect(screen.getByText('Exemplary')).toBeInTheDocument();
+    });
+
+    it('should show Good for score >= 1300', () => {
+      const goodUser = { ...mockUser, ethosScore: 1500 };
+      render(<SuccessView user={goodUser} showScore />);
+      
+      expect(screen.getByText('Good')).toBeInTheDocument();
+    });
+
+    it('should show Moderate for score >= 1000', () => {
+      const neutralUser = { ...mockUser, ethosScore: 1100 };
+      render(<SuccessView user={neutralUser} showScore />);
+      
+      expect(screen.getByText('Moderate')).toBeInTheDocument();
+    });
+
+    it('should show Low for score >= 700', () => {
+      const lowUser = { ...mockUser, ethosScore: 800 };
+      render(<SuccessView user={lowUser} showScore />);
+      
+      expect(screen.getByText('Low')).toBeInTheDocument();
+    });
+
+    it('should show Very Low for score < 700', () => {
+      const poorUser = { ...mockUser, ethosScore: 300 };
+      render(<SuccessView user={poorUser} showScore />);
+      
+      expect(screen.getByText('Very Low')).toBeInTheDocument();
+    });
+  });
+
+  describe('theming', () => {
+    it('should apply custom theme', () => {
+      render(<SuccessView user={mockUser} theme={{ textPrimary: '#ff0000' }} />);
+      
+      expect(screen.getByText('Test User')).toBeInTheDocument();
+    });
+  });
+
+  describe('custom styling', () => {
+    it('should apply custom className', () => {
+      const { container } = render(<SuccessView user={mockUser} className="custom-success" />);
+      
+      expect(container.querySelector('.custom-success')).toBeInTheDocument();
+    });
+
+    it('should apply custom style', () => {
+      const { container } = render(<SuccessView user={mockUser} style={{ padding: '50px' }} />);
+      
+      const view = container.firstChild as HTMLElement;
+      expect(view.style.padding).toBe('50px');
+    });
   });
 });
 

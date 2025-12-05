@@ -139,7 +139,7 @@ Response:
 ```json
 {
   "nonce": "abc123...",
-  "expiresAt": "2024-12-04T12:05:00.000Z"
+  "expiresAt": "2025-12-05T12:05:00.000Z"
 }
 ```
 

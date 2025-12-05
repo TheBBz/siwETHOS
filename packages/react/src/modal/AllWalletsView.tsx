@@ -61,7 +61,7 @@ export function AllWalletsView({
   theme = DEFAULT_THEME,
 }: AllWalletsViewProps) {
   const t = { ...DEFAULT_THEME, ...theme };
-  const { isInstalled, detectedWallets } = useWalletDetection();
+  const { isInstalled, detectedWallets: _detectedWallets } = useWalletDetection();
 
   // Sort wallets - detected first
   const sortedWallets = useMemo(() => {

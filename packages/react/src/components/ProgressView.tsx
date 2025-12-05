@@ -2,7 +2,7 @@
  * Progress View Component
  */
 
-import type { ProgressViewProps, ConnectionStatus, ModalTheme } from '../types';
+import type { ProgressViewProps, ConnectionStatus } from '../types';
 import { DEFAULT_THEME } from '../types';
 
 const STATUS_MESSAGES: Record<ConnectionStatus, string> = {
