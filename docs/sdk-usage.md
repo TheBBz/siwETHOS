@@ -389,8 +389,8 @@ URI: https://example.com
 Version: 1
 Chain ID: 1
 Nonce: abc123...
-Issued At: 2024-12-04T12:00:00.000Z
-Expiration Time: 2024-12-04T12:05:00.000Z
+Issued At: 2025-12-05T12:00:00.000Z
+Expiration Time: 2025-12-05T12:05:00.000Z
 ```
 
 This message clearly communicates to users that:

@@ -1,0 +1,127 @@
+/* Sign in with Ethos - React Styles */
+
+/* Base modal styles */
+.ethos-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ethos-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.ethos-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+/* Wallet button styles */
+.ethos-wallet-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
+}
+
+.ethos-wallet-button:hover:not(:disabled) {
+  border-color: #6366f1;
+  background-color: #fafafa;
+}
+
+.ethos-wallet-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.ethos-wallet-button--selected {
+  border: 2px solid #6366f1;
+  background-color: #f5f3ff;
+}
+
+/* Sign in button styles */
+.ethos-signin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #6366f1;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.ethos-signin-button:hover:not(:disabled) {
+  background-color: #4f46e5;
+}
+
+.ethos-signin-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ethos-signin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Spinner animation */
+@keyframes ethos-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ethos-spinner {
+  border: 3px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: ethos-spin 1s linear infinite;
+}
+
+/* Score colors */
+.ethos-score--very-low { color: #ef4444; }
+.ethos-score--low { color: #f97316; }
+.ethos-score--moderate { color: #eab308; }
+.ethos-score--good { color: #84cc16; }
+.ethos-score--great { color: #22c55e; }
+.ethos-score--excellent { color: #14b8a6; }
+.ethos-score--exemplary { color: #0ea5e9; }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .ethos-modal-content {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    position: fixed;
+    bottom: 0;
+    max-height: 85vh;
+  }
+}

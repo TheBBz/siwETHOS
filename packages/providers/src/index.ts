@@ -1,14 +1,18 @@
 /**
  * Sign in with Ethos - Provider Utilities
  *
- * This package provides SIWE (Sign-In with Ethereum) utilities
- * for the Sign in with Ethos authentication server.
- *
- * Users connect their Ethereum wallet, sign a message to prove ownership,
- * and are authenticated if their wallet address has an Ethos profile.
+ * This package provides authentication utilities for Sign in with Ethos:
+ * - SIWE (Sign-In with Ethereum) for wallet authentication
+ * - Discord OAuth2 provider
+ * - Telegram Login provider
+ * - Farcaster SIWF provider
+ * - Score validation utilities
  */
 
-// Main types
+// ============================================================================
+// Main Types
+// ============================================================================
+
 export type {
   // Wallet auth types
   WalletAuthParams,
@@ -20,6 +24,10 @@ export type {
   SIWEVerifyResult,
   NonceStore,
 } from './types';
+
+// ============================================================================
+// SIWE (Sign-In with Ethereum)
+// ============================================================================
 
 // SIWE message utilities
 export {
@@ -49,3 +57,55 @@ export {
   checksumAddress,
   addressesEqual,
 } from './siwe/address';
+
+// ============================================================================
+// Discord OAuth2 Provider
+// ============================================================================
+
+export { DiscordProvider } from './discord';
+export type {
+  DiscordConfig,
+  DiscordUser,
+  DiscordTokenResponse,
+  DiscordCallbackResult,
+  DiscordEthosLookup,
+} from './discord';
+
+// ============================================================================
+// Telegram Login Provider
+// ============================================================================
+
+export { TelegramProvider, TelegramVerificationError } from './telegram';
+export type {
+  TelegramConfig,
+  TelegramAuthData,
+  TelegramUser,
+  TelegramEthosLookup,
+} from './telegram';
+
+// ============================================================================
+// Farcaster SIWF Provider
+// ============================================================================
+
+export { FarcasterProvider, FarcasterVerificationError } from './farcaster';
+export type {
+  FarcasterConfig,
+  SIWFMessage,
+  SIWFMessageParams,
+  SIWFVerifyParams,
+  FarcasterUser,
+  FarcasterEthosLookup,
+} from './farcaster';
+
+// ============================================================================
+// Score Validation
+// ============================================================================
+
+export {
+  validateMinScore,
+  meetsMinScore,
+  getScoreTier,
+  EthosScoreInsufficientError,
+  SCORE_TIERS,
+} from './score';
+export type { UserWithScore } from './score';
