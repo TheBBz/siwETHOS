@@ -2,10 +2,16 @@
  * Sign in with Ethos - JavaScript SDK
  *
  * Framework-agnostic SDK for integrating "Sign in with Ethos"
- * authentication into any web application using wallet-based auth (SIWE).
+ * authentication into any web application using wallet-based auth (SIWE)
+ * or social logins (Discord, Telegram, Farcaster).
  *
- * Users connect their Ethereum wallet, sign a message to prove ownership,
- * and are authenticated if their wallet address has an Ethos profile.
+ * Users can authenticate via:
+ * - Ethereum wallet (SIWE) - sign a message to prove ownership
+ * - Discord OAuth - link their Discord account
+ * - Telegram Login - link their Telegram account
+ * - Farcaster (SIWF) - sign with their Farcaster identity
+ *
+ * All methods require an Ethos profile linked to the authentication method.
  */
 
 // ============================================================================
@@ -13,15 +19,37 @@
 // ============================================================================
 
 /**
- * Configuration for wallet-based auth
+ * Supported authentication methods
  */
-export interface WalletAuthConfig {
+export type AuthMethod = 'wallet' | 'twitter' | 'discord' | 'telegram' | 'farcaster';
+
+/**
+ * Social authentication providers
+ */
+export type SocialProvider = 'twitter' | 'discord' | 'telegram' | 'farcaster';
+
+/**
+ * Base configuration for all auth methods
+ */
+export interface EthosAuthConfig {
   /**
    * Base URL of the Ethos auth server
    * @default 'https://ethos.thebbz.xyz'
    */
   authServerUrl?: string;
 
+  /**
+   * Minimum Ethos score required to authenticate (0-2800)
+   * If set, users with scores below this will be rejected
+   * @default undefined (no minimum)
+   */
+  minScore?: number;
+}
+
+/**
+ * Configuration for wallet-based auth
+ */
+export interface WalletAuthConfig extends EthosAuthConfig {
   /**
    * Chain ID for the Ethereum network
    * @default 1 (Ethereum mainnet)
@@ -103,17 +131,9 @@ export interface VerifyParams {
 
 /**
  * Result from successful wallet verification
+ * @deprecated Use AuthResult instead
  */
-export interface WalletAuthResult {
-  /** JWT access token */
-  accessToken: string;
-  /** Token type (always 'Bearer') */
-  tokenType: 'Bearer';
-  /** Token expiry in seconds */
-  expiresIn: number;
-  /** The authenticated user profile */
-  user: EthosUser;
-}
+export interface WalletAuthResult extends AuthResult {}
 
 /**
  * User profile from authentication
@@ -136,9 +156,29 @@ export interface EthosUser {
   /** List of verified attestations/userkeys */
   ethosAttestations: string[];
   /** Authentication method used */
-  authMethod: 'wallet';
-  /** Wallet address used for auth */
-  walletAddress: string;
+  authMethod: AuthMethod;
+  /** Wallet address used for auth (only for wallet auth) */
+  walletAddress?: string;
+  /** Social provider used for auth (only for social auth) */
+  socialProvider?: SocialProvider;
+  /** Social provider user ID (only for social auth) */
+  socialId?: string;
+  /** URL to Ethos profile */
+  profileUrl?: string;
+}
+
+/**
+ * Generic authentication result
+ */
+export interface AuthResult {
+  /** JWT access token */
+  accessToken: string;
+  /** Token type (always 'Bearer') */
+  tokenType: 'Bearer';
+  /** Token expiry in seconds */
+  expiresIn: number;
+  /** The authenticated user profile */
+  user: EthosUser;
 }
 
 // ============================================================================
@@ -222,7 +262,7 @@ export function resetGlobalConfig(): void {
 /**
  * Resolve configuration with priority: instance > global > defaults
  */
-function resolveConfig(instanceConfig: WalletAuthConfig = {}): Required<WalletAuthConfig> {
+function resolveConfig(instanceConfig: WalletAuthConfig = {}): Required<Omit<WalletAuthConfig, 'minScore'>> & { minScore?: number } {
   return {
     authServerUrl: instanceConfig.authServerUrl 
       ?? globalConfig.authServerUrl 
@@ -236,6 +276,7 @@ function resolveConfig(instanceConfig: WalletAuthConfig = {}): Required<WalletAu
     expirationTime: instanceConfig.expirationTime 
       ?? globalConfig.expirationTime 
       ?? DEFAULTS.EXPIRATION_TIME,
+    minScore: instanceConfig.minScore ?? globalConfig.minScore,
   };
 }
 
@@ -316,12 +357,17 @@ export function createSIWEMessage(params: {
 // ============================================================================
 
 /**
+ * Resolved wallet config type
+ */
+type ResolvedWalletConfig = Required<Omit<WalletAuthConfig, 'minScore'>> & { minScore?: number };
+
+/**
  * Ethos Wallet Authentication Client
  *
  * Handles SIWE (Sign-In with Ethereum) flow for Sign in with Ethos.
  */
 export class EthosWalletAuth {
-  private config: Required<WalletAuthConfig>;
+  private config: ResolvedWalletConfig;
 
   private constructor(config: WalletAuthConfig) {
     this.config = resolveConfig(config);
@@ -654,8 +700,411 @@ export class EthosWalletAuth {
   /**
    * Get the current configuration
    */
-  getConfig(): Readonly<Required<WalletAuthConfig>> {
+  getConfig(): Readonly<ResolvedWalletConfig> {
     return { ...this.config };
+  }
+}
+
+// ============================================================================
+// EthosAuth - Unified Authentication (Wallet + Social)
+// ============================================================================
+
+/**
+ * Resolved auth config type
+ */
+type ResolvedAuthConfig = Required<Omit<EthosAuthConfig, 'minScore'>> & { minScore?: number };
+
+/**
+ * Resolve base auth configuration
+ */
+function resolveAuthConfig(instanceConfig: EthosAuthConfig = {}): ResolvedAuthConfig {
+  return {
+    authServerUrl: instanceConfig.authServerUrl 
+      ?? globalConfig.authServerUrl 
+      ?? DEFAULTS.AUTH_SERVER_URL,
+    minScore: instanceConfig.minScore ?? globalConfig.minScore,
+  };
+}
+
+/**
+ * Parameters for social auth redirect
+ */
+export interface SocialAuthParams {
+  /** URI to redirect back to after authentication */
+  redirectUri: string;
+  /** Optional state parameter for CSRF protection */
+  state?: string;
+  /** Optional minimum score requirement (overrides config) */
+  minScore?: number;
+}
+
+/**
+ * Telegram auth data from Login Widget
+ */
+export interface TelegramAuthData {
+  /** Telegram user ID */
+  id: number;
+  /** User's first name */
+  first_name: string;
+  /** User's last name (optional) */
+  last_name?: string;
+  /** Username (optional) */
+  username?: string;
+  /** Profile photo URL (optional) */
+  photo_url?: string;
+  /** Unix timestamp of auth */
+  auth_date: number;
+  /** Hash for verification */
+  hash: string;
+}
+
+/**
+ * Farcaster SIWF message params
+ */
+export interface FarcasterAuthParams {
+  /** Farcaster FID */
+  fid: number;
+  /** Custody address that signed */
+  custodyAddress: string;
+  /** The message that was signed */
+  message: string;
+  /** The signature */
+  signature: string;
+}
+
+/**
+ * Unified Ethos Authentication Client
+ *
+ * Supports both wallet (SIWE) and social (Discord, Telegram, Farcaster) authentication.
+ * All methods require the user to have an Ethos profile linked to their authentication method.
+ *
+ * @example
+ * ```js
+ * // Initialize
+ * const auth = EthosAuth.init({ minScore: 500 });
+ *
+ * // Hosted social auth (redirect flow)
+ * const url = auth.getAuthUrl('discord', {
+ *   redirectUri: 'https://myapp.com/callback',
+ *   state: 'random-csrf-token'
+ * });
+ * window.location.href = url;
+ *
+ * // After redirect, exchange code for tokens
+ * const result = await auth.exchangeCode(code);
+ * console.log('Welcome,', result.user.name);
+ * ```
+ */
+export class EthosAuth {
+  private config: ResolvedAuthConfig;
+
+  private constructor(config: EthosAuthConfig) {
+    this.config = resolveAuthConfig(config);
+  }
+
+  /**
+   * Initialize the unified Ethos Auth client
+   *
+   * @param config - Configuration options
+   * @returns Configured EthosAuth instance
+   *
+   * @example
+   * ```js
+   * const auth = EthosAuth.init({
+   *   authServerUrl: 'https://ethos.thebbz.xyz',
+   *   minScore: 500  // Require minimum score of 500
+   * });
+   * ```
+   */
+  static init(config: EthosAuthConfig = {}): EthosAuth {
+    return new EthosAuth(config);
+  }
+
+  // --------------------------------------------------------------------------
+  // Hosted Flow (Redirect-based)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get the authorization URL for a social provider (hosted flow)
+   *
+   * Redirects user to the auth server which handles the OAuth flow.
+   * After authentication, user is redirected back to your redirectUri with a code.
+   *
+   * @param provider - The social provider ('discord', 'telegram', 'farcaster')
+   * @param params - Redirect parameters
+   * @returns The authorization URL to redirect to
+   *
+   * @example
+   * ```js
+   * const url = auth.getAuthUrl('discord', {
+   *   redirectUri: 'https://myapp.com/callback',
+   *   state: crypto.randomUUID()
+   * });
+   * window.location.href = url;
+   * ```
+   */
+  getAuthUrl(provider: SocialProvider, params: SocialAuthParams): string {
+    const url = new URL(`/auth/${provider}`, this.config.authServerUrl);
+    url.searchParams.set('redirect_uri', params.redirectUri);
+    if (params.state) {
+      url.searchParams.set('state', params.state);
+    }
+    const minScore = params.minScore ?? this.config.minScore;
+    if (minScore !== undefined) {
+      url.searchParams.set('min_score', minScore.toString());
+    }
+    return url.toString();
+  }
+
+  /**
+   * Redirect to a social provider's authentication page (hosted flow)
+   *
+   * @param provider - The social provider
+   * @param params - Redirect parameters
+   */
+  redirect(provider: SocialProvider, params: SocialAuthParams): void {
+    if (typeof window === 'undefined') {
+      throw new EthosAuthError(
+        'redirect() can only be called in browser environment',
+        'browser_required'
+      );
+    }
+    window.location.href = this.getAuthUrl(provider, params);
+  }
+
+  /**
+   * Exchange an authorization code for tokens (after redirect callback)
+   *
+   * @param code - The authorization code from the callback URL
+   * @returns Authentication result with tokens and user profile
+   *
+   * @example
+   * ```js
+   * // In your callback page
+   * const params = new URLSearchParams(window.location.search);
+   * const code = params.get('code');
+   * const state = params.get('state');
+   *
+   * // Verify state matches what you sent
+   * if (state !== savedState) throw new Error('CSRF mismatch');
+   *
+   * const result = await auth.exchangeCode(code);
+   * ```
+   */
+  async exchangeCode(code: string): Promise<AuthResult> {
+    const url = new URL('/api/auth/token', this.config.authServerUrl);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        code,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw new EthosAuthError(
+        error.error_description || error.error || 'Token exchange failed',
+        error.error || 'token_error',
+        error
+      );
+    }
+
+    return this.parseAuthResponse(await response.json());
+  }
+
+  // --------------------------------------------------------------------------
+  // Self-Hosted Flow (Direct API calls)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Verify Telegram auth data (for self-hosted flow)
+   *
+   * Send the auth data from Telegram Login Widget to the server for verification.
+   * Server validates the hash using its bot token.
+   *
+   * @param authData - Auth data from Telegram Login Widget
+   * @returns Authentication result
+   *
+   * @example
+   * ```js
+   * // After Telegram Login Widget callback
+   * window.onTelegramAuth = async (user) => {
+   *   const result = await auth.verifyTelegram(user);
+   *   console.log('Logged in as', result.user.name);
+   * };
+   * ```
+   */
+  async verifyTelegram(authData: TelegramAuthData): Promise<AuthResult> {
+    const url = new URL('/api/auth/telegram/verify', this.config.authServerUrl);
+    
+    const body: Record<string, unknown> = { ...authData };
+    if (this.config.minScore !== undefined) {
+      body.min_score = this.config.minScore;
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw new EthosAuthError(
+        error.error_description || error.error || 'Telegram verification failed',
+        error.error || 'telegram_verify_error',
+        error
+      );
+    }
+
+    return this.parseAuthResponse(await response.json());
+  }
+
+  /**
+   * Verify Farcaster SIWF signature (for self-hosted flow)
+   *
+   * @param params - Farcaster auth parameters
+   * @returns Authentication result
+   *
+   * @example
+   * ```js
+   * // After Sign-In with Farcaster
+   * const result = await auth.verifyFarcaster({
+   *   fid: 12345,
+   *   custodyAddress: '0x...',
+   *   message: 'Sign in with Farcaster...',
+   *   signature: '0x...'
+   * });
+   * ```
+   */
+  async verifyFarcaster(params: FarcasterAuthParams): Promise<AuthResult> {
+    const url = new URL('/api/auth/farcaster/verify', this.config.authServerUrl);
+    
+    const body: Record<string, unknown> = { ...params };
+    if (this.config.minScore !== undefined) {
+      body.min_score = this.config.minScore;
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw new EthosAuthError(
+        error.error_description || error.error || 'Farcaster verification failed',
+        error.error || 'farcaster_verify_error',
+        error
+      );
+    }
+
+    return this.parseAuthResponse(await response.json());
+  }
+
+  // --------------------------------------------------------------------------
+  // Wallet Auth (delegates to EthosWalletAuth)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get a wallet auth instance for SIWE authentication
+   *
+   * @param walletConfig - Additional wallet-specific config
+   * @returns EthosWalletAuth instance
+   *
+   * @example
+   * ```js
+   * const walletAuth = auth.wallet({ chainId: 1 });
+   * const result = await walletAuth.signIn(address, signMessage);
+   * ```
+   */
+  wallet(walletConfig: Omit<WalletAuthConfig, 'authServerUrl' | 'minScore'> = {}): EthosWalletAuth {
+    return EthosWalletAuth.init({
+      ...walletConfig,
+      authServerUrl: this.config.authServerUrl,
+      minScore: this.config.minScore,
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // User Info
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get user profile using an access token
+   *
+   * @param accessToken - JWT access token
+   * @returns User profile
+   */
+  async getUser(accessToken: string): Promise<EthosUser> {
+    const url = new URL('/api/userinfo', this.config.authServerUrl);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw new EthosAuthError(
+        error.error_description || error.error || 'Failed to fetch user info',
+        error.error || 'userinfo_error',
+        error
+      );
+    }
+
+    return this.parseUserResponse(await response.json());
+  }
+
+  /**
+   * Get the current configuration
+   */
+  getConfig(): Readonly<ResolvedAuthConfig> {
+    return { ...this.config };
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Helpers
+  // --------------------------------------------------------------------------
+
+  private parseAuthResponse(data: Record<string, unknown>): AuthResult {
+    const rawUser = data.user as Record<string, unknown>;
+    return {
+      accessToken: data.access_token as string,
+      tokenType: data.token_type as 'Bearer',
+      expiresIn: data.expires_in as number,
+      user: this.parseUserResponse(rawUser),
+    };
+  }
+
+  private parseUserResponse(data: Record<string, unknown>): EthosUser {
+    const authMethod = (data.auth_method || data.authMethod || 'wallet') as AuthMethod;
+    
+    return {
+      sub: data.sub as string,
+      name: data.name as string,
+      picture: (data.picture as string | null) ?? null,
+      ethosProfileId: (data.ethos_profile_id ?? data.ethosProfileId) as number,
+      ethosUsername: (data.ethos_username ?? data.ethosUsername ?? null) as string | null,
+      ethosScore: (data.ethos_score ?? data.ethosScore) as number,
+      ethosStatus: (data.ethos_status ?? data.ethosStatus) as string,
+      ethosAttestations: (data.ethos_attestations ?? data.ethosAttestations ?? []) as string[],
+      authMethod,
+      walletAddress: (data.wallet_address ?? data.walletAddress) as string | undefined,
+      socialProvider: (data.social_provider ?? data.socialProvider) as SocialProvider | undefined,
+      socialId: (data.social_id ?? data.socialId) as string | undefined,
+    };
   }
 }
 
@@ -686,5 +1135,5 @@ function checksumAddress(address: string): string {
 // Re-export defaults for advanced users
 export { DEFAULTS };
 
-// Default export
-export default EthosWalletAuth;
+// Default export (EthosAuth for new users, EthosWalletAuth still available as named export)
+export default EthosAuth;

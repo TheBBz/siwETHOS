@@ -21,7 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved Quick Start documentation with clearer examples
 - Unified color scheme across all components
 
-## [1.0.0] - 2024-12-04
+## [1.1.0] - 2025-12-05
+
+### Added
+- React components package (`@thebbz/siwe-ethos-react`) v1.0.0
+- Sign-in modal with wallet and social authentication
+- Farcaster QR code authentication flow
+- Discord, Twitter, and Telegram OAuth support
+- Sign out animation and flow
+- UTF-8 emoji support in OAuth callbacks
+
+### Changed
+- Improved OAuth callback handling with proper base64url decoding
+- Enhanced error handling across all authentication flows
+
+## [1.0.0] - 2025-12-05
 
 ### Added
 - Initial release of Sign in with Ethos
