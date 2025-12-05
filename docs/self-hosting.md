@@ -2,6 +2,8 @@
 
 This guide covers deploying your own instance of Sign in with Ethos.
 
+> **Note:** For the demo server, visit [ethos.thebbz.xyz](https://ethos.thebbz.xyz). The source code for the demo is available at [github.com/TheBBz/siwETHOS-demo](https://github.com/TheBBz/siwETHOS-demo).
+
 ## Prerequisites
 
 - Node.js 18+ or Docker
@@ -14,9 +16,10 @@ This guide covers deploying your own instance of Sign in with Ethos.
 
 The easiest way to deploy is using Vercel:
 
-1. **Fork the repository**
+1. **Fork the demo repository**
    ```bash
-   # Or click the "Fork" button on GitHub
+   git clone https://github.com/TheBBz/siwETHOS-demo.git
+   cd siwETHOS-demo
    ```
 
 2. **Import to Vercel**
@@ -38,6 +41,11 @@ The easiest way to deploy is using Vercel:
    | `SIWE_DOMAIN` | Your domain for SIWE messages |
    | `SIWE_NONCE_EXPIRY` | Nonce expiry in seconds (default: 300) |
 
+   | `TELEGRAM_BOT_USERNAME` | If using Telegram | - | Telegram bot username |
+   | `TELEGRAM_BOT_TOKEN` | If using Telegram | - | Telegram bot token from BotFather |
+   | `DISCORD_CLIENT_ID` | If using Discord | - | Discord OAuth client ID |
+   | `DISCORD_CLIENT_SECRET` | If using Discord | - | Discord OAuth client secret |
+
 4. **Set up Upstash Redis**
    - Go to [upstash.com](https://upstash.com)
    - Create a new Redis database
@@ -50,10 +58,10 @@ The easiest way to deploy is using Vercel:
 
 For self-hosted deployments with Docker:
 
-1. **Clone the repository**
+1. **Clone the demo repository**
    ```bash
-   git clone https://github.com/trust-ethos/sign-in-with-ethos.git
-   cd sign-in-with-ethos
+   git clone https://github.com/TheBBz/siwETHOS-demo.git
+   cd siwETHOS-demo
    ```
 
 2. **Configure environment**

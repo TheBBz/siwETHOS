@@ -2,6 +2,12 @@
 
 This guide covers integrating Sign in with Ethos into your web application using wallet-based authentication (SIWE).
 
+> **Quick Links:**
+> - [npm: @thebbz/siwe-ethos](https://www.npmjs.com/package/@thebbz/siwe-ethos)
+> - [Live Demo](https://ethos.thebbz.xyz)
+> - [GitHub Repository](https://github.com/TheBBz/siwETHOS)
+> - [React Components](./react-components.md) - For an easier integration with React
+
 ## Installation
 
 ### npm/pnpm/yarn

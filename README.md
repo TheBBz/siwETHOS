@@ -1,8 +1,17 @@
 # Sign in with Ethos
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@thebbz/siwe-ethos"><img src="https://img.shields.io/npm/v/@thebbz/siwe-ethos.svg" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@thebbz/siwe-ethos-react"><img src="https://img.shields.io/npm/v/@thebbz/siwe-ethos-react.svg?label=react" alt="react version" /></a>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
+</p>
+
+<p align="center">
+  <a href="https://ethos.thebbz.xyz">Live Demo</a> •
+  <a href="https://www.npmjs.com/package/@thebbz/siwe-ethos">SDK</a> •
+  <a href="https://www.npmjs.com/package/@thebbz/siwe-ethos-react">React</a> •
+  <a href="docs/self-hosting.md">Self-Hosting</a>
 </p>
 
 Wallet-based authentication for [Ethos Network](https://ethos.network). Let users sign in with their Ethereum wallet and access their on-chain credibility score using [Sign-In with Ethereum (SIWE)](https://login.xyz/).
@@ -11,10 +20,20 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 
 - 🔐 **Wallet Authentication** - Sign-In with Ethereum (EIP-4361) standard
 - 🦊 **Multi-Wallet Support** - MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave
+- 🌐 **Social Logins** - Farcaster, Discord, Twitter/X, Telegram
 - 📊 **Credibility Scores** - Access users' Ethos reputation data (0-2800)
+- ⚛️ **React Components** - Beautiful, animated auth modal
 - ⚡ **No Gas Fees** - Signature-only verification, no transactions required
 - 🚀 **Self-Hostable** - Deploy on Vercel, Docker, or any platform
 - 📦 **Framework-Agnostic SDK** - Works with any JavaScript framework
+
+## Packages
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| [`@thebbz/siwe-ethos`](https://www.npmjs.com/package/@thebbz/siwe-ethos) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos) | Core SDK for authentication |
+| [`@thebbz/siwe-ethos-react`](https://www.npmjs.com/package/@thebbz/siwe-ethos-react) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-react.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-react) | React components & modal |
+| [`@thebbz/siwe-ethos-providers`](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-providers.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | Server-side SIWE utilities |
 
 ## How It Works
 
@@ -53,7 +72,41 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 
 ## Quick Start
 
-### Using the SDK
+### Option 1: React Components (Easiest)
+
+```bash
+npm install @thebbz/siwe-ethos-react
+```
+
+```tsx
+import { useState } from 'react';
+import { EthosAuthModal, EthosAuthResult } from '@thebbz/siwe-ethos-react';
+
+function App() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<EthosAuthResult | null>(null);
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>
+        {user ? `Hello, ${user.profile.displayName}` : 'Sign in with Ethos'}
+      </button>
+
+      <EthosAuthModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onSuccess={(result) => {
+          setUser(result);
+          setIsOpen(false);
+          console.log('Score:', result.profile.score); // Credibility score (0-2800)
+        }}
+      />
+    </>
+  );
+}
+```
+
+### Option 2: Using the SDK
 
 ```bash
 npm install @thebbz/siwe-ethos
@@ -86,7 +139,7 @@ function SignInButton() {
 }
 ```
 
-### Self-Hosting
+### Option 3: Self-Hosting
 
 #### Option 1: Vercel (Recommended)
 
@@ -158,27 +211,25 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Documentation
 
-- [SDK Usage Guide](docs/sdk-usage.md) - Integration examples
-- [Self-Hosting Guide](docs/self-hosting.md) - Deployment options
+- [SDK Usage Guide](docs/sdk-usage.md) - Core SDK integration
+- [React Components Guide](docs/react-components.md) - React modal & hooks
+- [Self-Hosting Guide](docs/self-hosting.md) - Deploy your own instance
 
 ## Project Structure
 
 ```
 signinwithethos/
-├── apps/
-│   └── server/              # Next.js auth server
-│       └── src/
-│           ├── app/         # Pages and API routes
-│           ├── components/  # React components (modal, hooks)
-│           └── lib/         # SIWE verification, Ethos API
 ├── packages/
-│   ├── providers/           # SIWE utilities
-│   └── sdk/                 # JavaScript SDK
+│   ├── sdk/                 # @thebbz/siwe-ethos - Client SDK
+│   ├── react/               # @thebbz/siwe-ethos-react - React components
+│   └── providers/           # @thebbz/siwe-ethos-providers - SIWE utilities
 ├── docs/                    # Documentation
-├── docker-compose.yml
-├── Dockerfile
-└── vercel.json
+│   ├── sdk-usage.md         # SDK integration guide
+│   └── self-hosting.md      # Deployment options
+└── README.md
 ```
+
+The demo app is hosted separately at [siwETHOS-demo](https://github.com/TheBBz/siwETHOS-demo).
 
 ## Contributing
 
@@ -190,6 +241,11 @@ MIT - see [LICENSE](LICENSE)
 
 ## Links
 
+- [Live Demo](https://ethos.thebbz.xyz) - Try the authentication flow
+- [GitHub Repository](https://github.com/TheBBz/siwETHOS)
+- [npm: @thebbz/siwe-ethos](https://www.npmjs.com/package/@thebbz/siwe-ethos)
+- [npm: @thebbz/siwe-ethos-react](https://www.npmjs.com/package/@thebbz/siwe-ethos-react)
+- [npm: @thebbz/siwe-ethos-providers](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers)
 - [Ethos Network](https://ethos.network)
 - [Ethos API Docs](https://developers.ethos.network)
 - [Sign-In with Ethereum](https://login.xyz)
