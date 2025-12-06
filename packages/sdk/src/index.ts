@@ -53,6 +53,19 @@ export { EthosAuthError } from './errors';
 export { DEFAULTS, STORAGE_KEYS, ENDPOINTS } from './constants';
 
 // ============================================================================
+// Session Management
+// ============================================================================
+
+export {
+  SessionManager,
+  MemoryStorage,
+  BrowserStorage,
+  createStorage,
+} from './session';
+
+export type { SessionManagerConfig } from './session';
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 

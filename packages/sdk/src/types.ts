@@ -227,12 +227,15 @@ export interface SessionState {
 }
 
 /**
- * Session storage interface
+ * Session storage interface (synchronous)
+ * 
+ * All methods are synchronous for simpler usage.
+ * For async storage (e.g., React Native AsyncStorage), wrap in a sync adapter.
  */
 export interface SessionStorage {
-  get(key: string): string | null | Promise<string | null>;
-  set(key: string, value: string): void | Promise<void>;
-  remove(key: string): void | Promise<void>;
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  remove(key: string): void;
 }
 
 /**
