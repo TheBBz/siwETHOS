@@ -131,6 +131,72 @@ async function get(x) {
 - Return JSON errors as `{ error: string, error_description: string }`
 - Use path aliases: `@/lib/*`, `@/components/*`
 
+## Modularity & Code Organization
+
+### ✅ Mandatory Structure Rules
+
+All new code MUST follow a modular, composable architecture:
+
+**File Size Limits:**
+- Single file should not exceed **300 lines** of code
+- If a file approaches this limit, split it into logical modules
+- `index.ts` files should only contain exports (barrel pattern)
+
+**Module Structure Pattern:**
+```
+package/src/
+├── index.ts           # Barrel exports only (no logic)
+├── types.ts           # All interfaces and type definitions
+├── constants.ts       # Configuration values and defaults
+├── errors.ts          # Custom error classes
+├── config.ts          # Configuration management
+├── utils/             # Pure utility functions
+│   ├── index.ts       # Re-exports
+│   └── [feature].ts   # Specific utilities
+├── clients/           # Main client classes
+│   ├── index.ts       # Re-exports
+│   └── [client].ts    # Individual clients
+└── [feature]/         # Feature-specific modules
+    ├── index.ts
+    └── [files].ts
+```
+
+**Separation of Concerns:**
+- **Types:** All interfaces and types in dedicated `types.ts` files
+- **Constants:** All magic values and defaults in `constants.ts`
+- **Errors:** Custom error classes in `errors.ts`
+- **Config:** Configuration logic in `config.ts`
+- **Utilities:** Pure functions (no side effects) in `utils/`
+- **Clients/Classes:** Main business logic in `clients/` or feature folders
+
+**Export Guidelines:**
+```typescript
+// ✅ Good - barrel export pattern
+// index.ts
+export { EthosAuth, EthosWalletAuth } from './clients';
+export { DEFAULTS, ENDPOINTS } from './constants';
+export type { EthosUser, AuthResult } from './types';
+
+// ❌ Bad - implementation in index.ts
+// index.ts
+export class EthosAuth { /* 500 lines of code */ }
+```
+
+**Testing Benefits:**
+- Each module can be tested in isolation
+- Mock dependencies at module boundaries
+- Coverage reporting per module
+- Easier to maintain test files under 300 lines
+
+### When Refactoring
+
+Before adding new features to an existing file:
+1. Check if file exceeds 200 lines → consider splitting first
+2. Identify logical boundaries (types, utils, business logic)
+3. Extract to new modules with clear single responsibility
+4. Update barrel exports in `index.ts`
+5. Run tests to verify no regressions
+
 ## Global Boundaries
 
 ### ✅ Always
