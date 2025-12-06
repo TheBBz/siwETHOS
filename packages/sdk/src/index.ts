@@ -1137,3 +1137,42 @@ export { DEFAULTS };
 
 // Default export (EthosAuth for new users, EthosWalletAuth still available as named export)
 export default EthosAuth;
+
+// ============================================================================
+// Re-exports from @thebbz/siwe-ethos-providers
+// ============================================================================
+
+// Ethos API Client - fetch profiles and scores
+export {
+  fetchEthosProfile,
+  fetchEthosScore,
+  getProfileByAddress,
+  getProfileByTwitter,
+  getProfileByDiscord,
+  getProfileByFarcaster,
+  getProfileByTelegram,
+  getProfileById,
+  getScoreByAddress,
+  EthosProfileNotFoundError,
+  EthosApiError,
+} from '@thebbz/siwe-ethos-providers';
+
+export type {
+  EthosClientConfig,
+  EthosLookupType,
+  EthosAttestation,
+  EthosProfile,
+  EthosScoreResult,
+} from '@thebbz/siwe-ethos-providers';
+
+// Score validation utilities
+export {
+  validateMinScore,
+  meetsMinScore,
+  getScoreTier,
+  EthosScoreInsufficientError,
+  SCORE_TIERS,
+} from '@thebbz/siwe-ethos-providers';
+
+export type { UserWithScore } from '@thebbz/siwe-ethos-providers';
+

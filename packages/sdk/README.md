@@ -228,6 +228,70 @@ Resources:
 - https://ethos.network
 ```
 
+## Ethos API Client
+
+Fetch Ethos profiles and credibility scores directly from the Ethos Network API.
+
+```javascript
+import {
+  fetchEthosProfile,
+  fetchEthosScore,
+  getProfileByAddress,
+  getScoreByAddress,
+} from '@thebbz/siwe-ethos';
+
+// Fetch full profile by Ethereum address
+const profile = await fetchEthosProfile('address', '0x1234...5678');
+console.log(profile.score); // 1850
+console.log(profile.displayName); // "Username"
+
+// Quick score check (doesn't throw on not found)
+const { score, ok } = await fetchEthosScore('address', '0x1234...5678');
+if (ok && score >= 500) {
+  console.log('User has good reputation!');
+}
+
+// Convenience functions
+const twitterProfile = await fetchEthosProfile('twitter', 'vitalikbuterin');
+const discordProfile = await fetchEthosProfile('discord', '123456789');
+
+// Or use the helper functions
+const profile = await getProfileByAddress('0x1234...5678');
+const result = await getScoreByAddress('0x1234...5678');
+```
+
+### Available Lookup Types
+
+- `address` - Ethereum wallet address
+- `twitter` / `x` - Twitter/X username
+- `discord` - Discord user ID
+- `farcaster` - Farcaster FID
+- `telegram` - Telegram user ID
+- `profile-id` - Ethos profile ID
+
+## Score Validation
+
+Validate user reputation scores meet minimum requirements.
+
+```javascript
+import {
+  validateMinScore,
+  meetsMinScore,
+  getScoreTier,
+} from '@thebbz/siwe-ethos';
+
+// Throws EthosScoreInsufficientError if score is below minimum
+validateMinScore(user, 500);
+
+// Boolean check (doesn't throw)
+if (!meetsMinScore(user.score, 500)) {
+  throw new Error('Score too low');
+}
+
+// Get user's score tier
+const tier = getScoreTier(1850); // 'trusted'
+```
+
 ## Security Considerations
 
 1. **Nonces**: Each authentication attempt uses a unique, server-generated nonce to prevent replay attacks.
@@ -247,3 +311,4 @@ Resources:
 ## License
 
 MIT
+

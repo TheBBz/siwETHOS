@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2025-12-06
+
+### Added
+- Ethos API Client in `@thebbz/siwe-ethos-providers`
+  - `fetchEthosProfile(type, identifier)` - Fetch full Ethos profile
+  - `fetchEthosScore(type, identifier)` - Get score with `{ score, ok }` result
+  - `getProfileByAddress(address)` - Fetch by Ethereum address
+  - `getProfileByTwitter(username)` - Fetch by Twitter/X username
+  - `getProfileByDiscord(id)` - Fetch by Discord user ID
+  - `getProfileByFarcaster(fid)` - Fetch by Farcaster FID
+  - `getProfileByTelegram(id)` - Fetch by Telegram user ID
+  - `getProfileById(profileId)` - Fetch by Ethos profile ID
+  - `getScoreByAddress(address)` - Quick score check by address
+- Re-exported Ethos API functions from `@thebbz/siwe-ethos` SDK
+- Re-exported score validation utilities (`validateMinScore`, `meetsMinScore`, `getScoreTier`) from SDK
+- `EthosProfileNotFoundError` and `EthosApiError` error classes
+- Comprehensive test coverage for Ethos API client (19 new tests)
+- Updated README documentation for both packages
+
+### Changed
+- SDK now depends on `@thebbz/siwe-ethos-providers` for shared utilities
 
 ## [1.1.0] - 2025-12-05
 

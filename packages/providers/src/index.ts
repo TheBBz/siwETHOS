@@ -109,3 +109,32 @@ export {
   SCORE_TIERS,
 } from './score';
 export type { UserWithScore } from './score';
+
+// ============================================================================
+// Ethos API Client
+// ============================================================================
+
+export {
+  // Main fetch functions
+  fetchEthosProfile,
+  fetchEthosScore,
+  // Convenience functions
+  getProfileByAddress,
+  getProfileByTwitter,
+  getProfileByDiscord,
+  getProfileByFarcaster,
+  getProfileByTelegram,
+  getProfileById,
+  getScoreByAddress,
+  // Errors
+  EthosProfileNotFoundError,
+  EthosApiError,
+} from './ethos';
+
+export type {
+  EthosClientConfig,
+  EthosLookupType,
+  EthosAttestation,
+  EthosProfile,
+  EthosScoreResult,
+} from './ethos';

@@ -14,15 +14,16 @@
   <a href="docs/self-hosting.md">Self-Hosting</a>
 </p>
 
-Wallet-based authentication for [Ethos Network](https://ethos.network). Let users sign in with their Ethereum wallet and access their on-chain credibility score using [Sign-In with Ethereum (SIWE)](https://login.xyz/).
+Wallet-based authentication for [Ethos Network](https://ethos.network). Let users sign in with their Ethereum wallet or social accounts and access their on-chain credibility score.
 
 ## Features
 
 - 🔐 **Wallet Authentication** - Sign-In with Ethereum (EIP-4361) standard
 - 🦊 **Multi-Wallet Support** - MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave
-- 🌐 **Social Logins** - Farcaster, Discord, Twitter/X, Telegram
+- 🌐 **Social Logins** - Farcaster (QR code), Discord, Twitter/X, Telegram
 - 📊 **Credibility Scores** - Access users' Ethos reputation data (0-2800)
-- ⚛️ **React Components** - Beautiful, animated auth modal
+- 🔍 **Profile Lookup** - Fetch any Ethos profile by address, social handle, or ID
+- ⚛️ **React Components** - Beautiful, animated auth modal with dark mode
 - ⚡ **No Gas Fees** - Signature-only verification, no transactions required
 - 🚀 **Self-Hostable** - Deploy on Vercel, Docker, or any platform
 - 📦 **Framework-Agnostic SDK** - Works with any JavaScript framework
@@ -37,9 +38,18 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 
 ## How It Works
 
+Users can authenticate via **wallet signature** or **social OAuth**:
+
+### Wallet Authentication
 1. **User connects wallet** - Choose from supported wallets (MetaMask, Rabby, etc.)
 2. **Sign a message** - No transaction, no gas fees, just a signature to prove ownership
 3. **Verify & fetch profile** - Server validates signature and retrieves Ethos profile
+4. **Access credibility data** - Get the user's Ethos score and attestations
+
+### Social Authentication
+1. **User selects provider** - Farcaster, Discord, Twitter/X, or Telegram
+2. **OAuth flow** - Redirects to provider for authentication
+3. **Link to Ethos** - Server looks up the Ethos profile linked to that social account
 4. **Access credibility data** - Get the user's Ethos score and attestations
 
 ```
@@ -48,25 +58,18 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 │                 │      │  (this project)  │      │   Network   │
 └────────┬────────┘      └────────┬─────────┘      └──────┬──────┘
          │                        │                       │
-         │  1. Request nonce      │                       │
+         │ Wallet: Sign SIWE msg  │                       │
+         │ Social: OAuth redirect │                       │
          │───────────────────────>│                       │
          │                        │                       │
-         │  2. Return nonce       │                       │
-         │<───────────────────────│                       │
-         │                        │                       │
-         │  3. Sign SIWE message  │                       │
-         │  (in user's wallet)    │                       │
-         │                        │                       │
-         │  4. Submit signature   │                       │
-         │───────────────────────>│                       │
-         │                        │                       │
-         │                        │  5. Lookup profile    │
+         │                        │  Lookup by address    │
+         │                        │  or social handle     │
          │                        │──────────────────────>│
          │                        │                       │
-         │                        │  6. Profile + score   │
+         │                        │  Profile + score      │
          │                        │<──────────────────────│
          │                        │                       │
-         │  7. JWT + user info    │                       │
+         │  JWT + user info       │                       │
          │<───────────────────────│                       │
 ```
 
@@ -139,7 +142,33 @@ function SignInButton() {
 }
 ```
 
-### Option 3: Self-Hosting
+### Option 3: Fetch Profiles Directly (No Auth)
+
+Look up any Ethos profile without requiring user authentication:
+
+```typescript
+import { 
+  fetchEthosProfile, 
+  getScoreByAddress,
+  getProfileByTwitter,
+  getProfileByFarcaster 
+} from '@thebbz/siwe-ethos';
+
+// By wallet address
+const profile = await fetchEthosProfile('address', '0x1234...');
+console.log(profile.score);        // 1847
+console.log(profile.displayName);  // "vitalik.eth"
+
+// Quick score check
+const { score, ok } = await getScoreByAddress('0x1234...');
+if (ok) console.log(`Score: ${score}`);
+
+// By social handles
+const twitterProfile = await getProfileByTwitter('VitalikButerin');
+const farcasterProfile = await getProfileByFarcaster('3');  // FID
+```
+
+### Option 4: Self-Hosting
 
 #### Option 1: Vercel (Recommended)
 
@@ -174,12 +203,22 @@ UPSTASH_REDIS_REST_TOKEN=your-upstash-token
 
 ## API Endpoints
 
+### Authentication
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/auth/nonce` | GET | Get nonce for SIWE message |
 | `/api/auth/wallet/verify` | POST | Verify wallet signature |
-| `/api/userinfo` | GET | Get authenticated user profile |
+| `/api/auth/farcaster` | GET | Start Farcaster OAuth flow |
+| `/api/auth/discord` | GET | Start Discord OAuth flow |
+| `/api/auth/twitter` | GET | Start Twitter OAuth flow |
+| `/api/auth/telegram` | GET | Start Telegram OAuth flow |
+
+### OAuth
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/authorize` | GET | OAuth 2.0 authorization |
 | `/api/token` | POST | Exchange auth code for JWT |
+| `/api/userinfo` | GET | Get authenticated user profile |
 
 ## User Data
 
@@ -194,11 +233,18 @@ The authenticated user object includes:
   "ethosUsername": "username",
   "ethosScore": 1847,
   "ethosStatus": "ACTIVE",
-  "ethosAttestations": ["x.com:handle", "discord:id"],
+  "ethosAttestations": ["x.com:handle", "discord:id", "farcaster:fid"],
   "authMethod": "wallet",
   "walletAddress": "0x..."
 }
 ```
+
+The `authMethod` field indicates how the user authenticated:
+- `wallet` - Signed in with Ethereum wallet (SIWE)
+- `farcaster` - Signed in via Farcaster
+- `discord` - Signed in via Discord
+- `twitter` - Signed in via Twitter/X
+- `telegram` - Signed in via Telegram
 
 ## Security
 

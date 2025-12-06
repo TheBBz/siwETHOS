@@ -1,6 +1,6 @@
 {
   "name": "@thebbz/siwe-ethos",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "JavaScript SDK for Sign in with Ethos authentication",
   "license": "MIT",
@@ -45,6 +45,9 @@
     "lint": "eslint src/",
     "test": "vitest run",
     "prepublishOnly": "pnpm run test && pnpm run build"
+  },
+  "dependencies": {
+    "@thebbz/siwe-ethos-providers": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
