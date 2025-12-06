@@ -66,6 +66,25 @@ export {
   detectWallets,
 } from './hooks';
 
+// Context & Session Hooks
+export {
+  EthosAuthProvider,
+  useEthosAuthContext,
+  useIsInsideEthosProvider,
+  useEthosSession,
+  useEthosUser,
+  useEthosScore,
+  useMinScore,
+  useIsAuthenticated,
+  useAccessToken,
+} from './context';
+
+export type {
+  EthosAuthContextValue,
+  EthosAuthProviderProps,
+  ScoreTierInfo,
+} from './context';
+
 // Types
 export type {
   // Wallet types
