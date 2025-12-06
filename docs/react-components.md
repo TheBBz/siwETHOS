@@ -152,6 +152,10 @@ Users connect their Ethereum wallet and sign a message to prove ownership. No tr
 
 ## Complete Example with Session Persistence
 
+For simple session persistence, you can use localStorage manually. However, for production apps we recommend using the `EthosAuthProvider` which handles session management, token refresh, and more.
+
+### Manual Approach (Simple)
+
 ```tsx
 import { useState, useEffect } from 'react';
 import { EthosAuthModal, EthosAuthResult } from '@thebbz/siwe-ethos-react';
@@ -183,39 +187,165 @@ function App() {
     localStorage.removeItem('ethos_user');
   };
 
-  if (user) {
+  // ...
+}
+```
+
+### Using EthosAuthProvider (Recommended)
+
+The `EthosAuthProvider` is a context provider that handles:
+- Automatic session restoration from storage
+- Token refresh before expiry
+- Centralized auth state accessible via hooks
+- Type-safe access to user data and scores
+
+```tsx
+import { 
+  EthosAuthProvider, 
+  useEthosSession,
+  useEthosUser,
+  useEthosScore,
+  useMinScore
+} from '@thebbz/siwe-ethos-react';
+
+// Wrap your app with the provider
+function App() {
+  return (
+    <EthosAuthProvider 
+      storageType="browser"  // 'browser' | 'memory'
+      refreshEndpoint="/api/auth/token"
+      autoRefresh={true}
+      onAuthStateChange={(session) => {
+        console.log('Auth state changed:', session.isAuthenticated);
+      }}
+    >
+      <YourApp />
+    </EthosAuthProvider>
+  );
+}
+
+function YourApp() {
+  const { login, logout, isAuthenticated, isLoading } = useEthosSession();
+  const { user } = useEthosUser();
+  const { score, tier, tierColor } = useEthosScore();
+  const { meetsRequirement, score: userScore } = useMinScore(1000);
+
+  if (isLoading) return <div>Loading...</div>;
+
+  if (!isAuthenticated) {
     return (
-      <div className="user-card">
-        {user.profile.avatar && (
-          <img 
-            src={user.profile.avatar} 
-            alt={user.profile.displayName || 'User'} 
-            className="avatar"
-          />
-        )}
-        <div className="user-info">
-          <h3>{user.profile.displayName || user.profile.username}</h3>
-          <p>Score: {user.profile.score}</p>
-          <p>Signed in via {user.provider}</p>
-        </div>
-        <button onClick={handleSignOut}>Sign Out</button>
-      </div>
+      <button onClick={() => {/* open modal and call login() on success */}}>
+        Sign In
+      </button>
     );
   }
 
   return (
-    <>
-      <button onClick={() => setIsModalOpen(true)}>
-        Sign in with Ethos
-      </button>
-
-      <EthosAuthModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleSuccess}
-      />
-    </>
+    <div>
+      <p>Welcome, {user?.name}!</p>
+      <p>Score: {score} ({tier})</p>
+      <p style={{ color: tierColor }}>Tier Color</p>
+      {meetsRequirement ? (
+        <p>✓ Access granted (score: {userScore})</p>
+      ) : (
+        <p>✗ Need score ≥1000</p>
+      )}
+      <button onClick={logout}>Sign Out</button>
+    </div>
   );
+}
+```
+
+## EthosAuthProvider Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `storageType` | `'browser' \| 'memory'` | `'memory'` | Where to persist session |
+| `storageKey` | `string` | `'ethos_auth_session'` | Storage key for session data |
+| `refreshEndpoint` | `string` | `/api/auth/token` | Endpoint for token refresh |
+| `autoRefresh` | `boolean` | `true` | Auto-refresh tokens before expiry |
+| `refreshThreshold` | `number` | `300` | Seconds before expiry to refresh |
+| `onAuthStateChange` | `(session) => void` | - | Callback on auth state changes |
+
+## Session Hooks
+
+### useEthosSession
+
+Primary hook for session management:
+
+```tsx
+const {
+  session,        // Full session state (SessionState)
+  isAuthenticated,
+  isLoading,
+  login,         // (result: AuthResult) => void
+  logout,        // () => void
+  refreshToken,  // () => Promise<void>
+} = useEthosSession();
+```
+
+### useEthosUser
+
+Access user data with loading states:
+
+```tsx
+const { 
+  user,      // EthosUser | null
+  isLoading, 
+  isAuthenticated 
+} = useEthosUser();
+```
+
+### useEthosScore
+
+Get score with tier calculation:
+
+```tsx
+const { 
+  score,     // number | null
+  tier,      // 'untrusted' | 'neutral' | 'trusted' | 'highly-trusted' | 'exemplary'
+  tierColor, // CSS color string for the tier
+  isLoading 
+} = useEthosScore();
+```
+
+### useMinScore
+
+Check if user meets a minimum score requirement:
+
+```tsx
+const { 
+  meetsRequirement,  // boolean
+  score,             // number | null
+  requiredScore,     // the minScore you passed in
+  isLoading 
+} = useMinScore(1000);
+```
+
+### useIsAuthenticated
+
+Simple auth check:
+
+```tsx
+const { isAuthenticated, isLoading } = useIsAuthenticated();
+```
+
+### useAccessToken
+
+Get current access token:
+
+```tsx
+const token = useAccessToken(); // string | null
+```
+
+### useIsInsideEthosProvider
+
+Check if inside provider (useful for conditional rendering):
+
+```tsx
+const isInProvider = useIsInsideEthosProvider();
+if (!isInProvider) {
+  return <p>Please wrap with EthosAuthProvider</p>;
 }
 ```
 

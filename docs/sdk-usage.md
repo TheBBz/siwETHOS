@@ -344,6 +344,7 @@ interface EthosUser {
   ethosAttestations: string[]; // Verified accounts
   authMethod: 'wallet';
   walletAddress: string;
+  profileUrl?: string;      // URL to Ethos profile
 }
 ```
 
@@ -365,6 +366,103 @@ const result = await auth.verify({
   signature: '0x...',
   address: '0x...',
 });
+```
+
+## Session Management
+
+The SDK provides built-in session management with automatic token refresh:
+
+### SessionManager
+
+```typescript
+import { SessionManager, createStorage } from '@thebbz/siwe-ethos';
+
+// Create a storage adapter ('browser' for localStorage, 'memory' for in-memory)
+const storage = createStorage('browser');
+
+// Initialize the session manager
+const sessionManager = new SessionManager({
+  storage,
+  refreshEndpoint: '/api/auth/token',
+  autoRefresh: true,        // Automatically refresh tokens before expiry
+  refreshThreshold: 300,    // Refresh 5 minutes before expiry
+});
+
+// Set session after authentication
+const result = await auth.signIn(address, signMessage);
+sessionManager.setSession({
+  accessToken: result.accessToken,
+  refreshToken: result.refreshToken,
+  expiresAt: Date.now() + result.expiresIn * 1000,
+  user: result.user,
+});
+
+// Listen for auth state changes
+const unsubscribe = sessionManager.onAuthStateChange((session) => {
+  console.log('Auth state:', session.isAuthenticated);
+  console.log('User:', session.user);
+});
+
+// Get current session
+const session = sessionManager.getSession();
+if (session.isAuthenticated) {
+  console.log('Welcome back,', session.user?.name);
+}
+
+// Logout
+sessionManager.logout();
+
+// Clean up when done
+sessionManager.destroy();
+unsubscribe();
+```
+
+### Storage Adapters
+
+```typescript
+import { BrowserStorage, MemoryStorage, createStorage } from '@thebbz/siwe-ethos';
+
+// Use localStorage (persists across browser sessions)
+const browserStorage = new BrowserStorage('my_app_session');
+
+// Use in-memory storage (clears on page refresh)
+const memoryStorage = new MemoryStorage();
+
+// Or use the factory function
+const storage = createStorage('browser'); // or 'memory'
+```
+
+### Token Refresh
+
+The session manager can automatically refresh tokens before they expire:
+
+```typescript
+const sessionManager = new SessionManager({
+  storage: createStorage('browser'),
+  refreshEndpoint: '/api/auth/token',  // Your token refresh endpoint
+  autoRefresh: true,
+  refreshThreshold: 300,  // Refresh 5 minutes before expiry
+});
+
+// Manually refresh if needed
+await sessionManager.refreshToken();
+```
+
+**Server endpoint example (Next.js):**
+
+```typescript
+// app/api/auth/token/route.ts
+export async function POST(request: Request) {
+  const { refresh_token } = await request.json();
+  
+  // Verify and issue new tokens...
+  
+  return Response.json({
+    access_token: newAccessToken,
+    refresh_token: newRefreshToken,
+    expires_in: 3600,
+  });
+}
 ```
 
 ## Security Best Practices
