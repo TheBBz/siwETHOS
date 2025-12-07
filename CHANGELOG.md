@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-12-07
+
+### Added
+
+#### SDK (`@thebbz/siwe-ethos`)
+- **Session Management Module**
+  - `SessionManager` class with automatic token refresh
+  - `BrowserStorage` adapter for localStorage persistence
+  - `MemoryStorage` adapter for in-memory sessions
+  - `createStorage()` factory function
+  - Auth state change listeners via `onAuthStateChange()`
+  - Configurable refresh threshold and auto-refresh
+- **Modular Architecture Refactor**
+  - Split 1179-line monolith into modular structure
+  - Types in `types.ts`, constants in `constants.ts`
+  - Error classes in `errors.ts`, config in `config.ts`
+  - Utility functions in `utils/` directory
+  - Client classes in `clients/` directory
+  - Session management in `session/` directory
+- Added `profileUrl` field to `EthosUser` interface
+
+#### React (`@thebbz/siwe-ethos-react`)
+- **EthosAuthProvider Context**
+  - Centralized session management for React apps
+  - Configurable storage type (browser/memory)
+  - Auto-refresh token support
+  - Auth state change callbacks
+- **Session Hooks**
+  - `useEthosSession()` - Full session control (login, logout, refresh)
+  - `useEthosUser()` - User data with loading states
+  - `useEthosScore()` - Score with tier calculation and colors
+  - `useMinScore(minScore)` - Score-gated access checks
+  - `useIsAuthenticated()` - Simple auth status
+  - `useAccessToken()` - Current access token
+  - `useIsInsideEthosProvider()` - Provider detection
+- 18 new tests for context and hooks
+
+### Changed
+- SDK files now follow 300-line limit modularity rule
+- Improved code organization and maintainability
+
 ## [1.2.0] - 2025-12-06
 
 ### Added
@@ -79,5 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Message expiration for SIWE
 - Secure session handling
 
-[Unreleased]: https://github.com/thebbz/siwETHOS/compare/v1.0.0...HEAD
+[1.3.0]: https://github.com/thebbz/siwETHOS/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/thebbz/siwETHOS/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/thebbz/siwETHOS/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/thebbz/siwETHOS/releases/tag/v1.0.0
