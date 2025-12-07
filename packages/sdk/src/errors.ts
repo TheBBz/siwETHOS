@@ -27,7 +27,7 @@ export class EthosAuthError extends Error {
     
     // Maintains proper stack trace for where error was thrown (V8 engines)
     const ErrorWithCapture = Error as typeof Error & {
-      captureStackTrace?: (target: object, constructor: Function) => void;
+      captureStackTrace?: (target: object, constructor: typeof EthosAuthError) => void;
     };
     if (ErrorWithCapture.captureStackTrace) {
       ErrorWithCapture.captureStackTrace(this, EthosAuthError);

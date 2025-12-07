@@ -96,7 +96,8 @@ export function EthosAuthProvider({
       unsubscribe();
       session.destroy();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Dependencies intentionally empty - session manager should only initialize once
+  }, []);
   
   // Login handler
   const login = useCallback((result: AuthResult) => {
