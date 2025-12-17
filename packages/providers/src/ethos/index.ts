@@ -94,6 +94,8 @@ export interface EthosProfile {
   description: string | null;
   /** Ethos credibility score (0-2800) */
   score: number;
+  /** Credibility level/tier */
+  level: string;
   /** Profile status */
   status: 'ACTIVE' | 'INACTIVE' | 'MERGED';
   /** List of userkeys (identifiers) */
