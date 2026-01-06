@@ -242,10 +242,7 @@ describe('Score Validation Integration', () => {
 
   describe('Score tier progression', () => {
     it('should identify correct tier for each score range', () => {
-      // Test boundary conditions for each tier
-      // Actual tier boundaries from score.ts:
-      // untrusted: 0-399, questionable: 400-799, neutral: 800-1199
-      // trusted: 1200-1599, reputable: 1600-1999, exemplary: 2000-2800
+      // Test boundary conditions for each tier (matches Ethos API tier names)
       const testCases = [
         { score: 0, expectedTier: 'untrusted' },
         { score: 399, expectedTier: 'untrusted' },
@@ -253,12 +250,20 @@ describe('Score Validation Integration', () => {
         { score: 799, expectedTier: 'questionable' },
         { score: 800, expectedTier: 'neutral' },
         { score: 1199, expectedTier: 'neutral' },
-        { score: 1200, expectedTier: 'trusted' },
-        { score: 1599, expectedTier: 'trusted' },
+        { score: 1200, expectedTier: 'known' },
+        { score: 1399, expectedTier: 'known' },
+        { score: 1400, expectedTier: 'established' },
+        { score: 1599, expectedTier: 'established' },
         { score: 1600, expectedTier: 'reputable' },
-        { score: 1999, expectedTier: 'reputable' },
-        { score: 2000, expectedTier: 'exemplary' },
-        { score: 2800, expectedTier: 'exemplary' },
+        { score: 1799, expectedTier: 'reputable' },
+        { score: 1800, expectedTier: 'exemplary' },
+        { score: 1999, expectedTier: 'exemplary' },
+        { score: 2000, expectedTier: 'distinguished' },
+        { score: 2199, expectedTier: 'distinguished' },
+        { score: 2200, expectedTier: 'revered' },
+        { score: 2399, expectedTier: 'revered' },
+        { score: 2400, expectedTier: 'renowned' },
+        { score: 2800, expectedTier: 'renowned' },
       ];
 
       for (const { score, expectedTier } of testCases) {
@@ -269,13 +274,17 @@ describe('Score Validation Integration', () => {
 
     it('should verify SCORE_TIERS constant is properly defined', () => {
       expect(SCORE_TIERS).toBeDefined();
-      // SCORE_TIERS uses lowercase keys
+      // SCORE_TIERS uses lowercase keys matching Ethos API
       expect(SCORE_TIERS.untrusted).toBeDefined();
       expect(SCORE_TIERS.questionable).toBeDefined();
       expect(SCORE_TIERS.neutral).toBeDefined();
-      expect(SCORE_TIERS.trusted).toBeDefined();
+      expect(SCORE_TIERS.known).toBeDefined();
+      expect(SCORE_TIERS.established).toBeDefined();
       expect(SCORE_TIERS.reputable).toBeDefined();
       expect(SCORE_TIERS.exemplary).toBeDefined();
+      expect(SCORE_TIERS.distinguished).toBeDefined();
+      expect(SCORE_TIERS.revered).toBeDefined();
+      expect(SCORE_TIERS.renowned).toBeDefined();
     });
   });
 
@@ -342,7 +351,7 @@ describe('Score Validation Integration', () => {
 
       // Step 3: Get user's tier
       const tier = getScoreTier(authResult.user.score);
-      expect(tier).toBe('trusted'); // 1500 is in trusted tier (1200-1599)
+      expect(tier).toBe('established'); // 1500 is in established tier (1400-1599)
     });
   });
 });

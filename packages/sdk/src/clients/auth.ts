@@ -21,6 +21,10 @@ import type {
   TelegramAuthData,
   FarcasterAuthParams,
   AuthMethod,
+  WebAuthnRegistrationOptions,
+  WebAuthnAuthenticationOptions,
+  WebAuthnRegistrationCredential,
+  WebAuthnAuthenticationCredential,
 } from '../types';
 
 /**
@@ -176,7 +180,7 @@ export class EthosAuth {
    */
   async verifyFarcaster(params: FarcasterAuthParams): Promise<AuthResult> {
     const url = new URL(ENDPOINTS.FARCASTER_VERIFY, this.config.authServerUrl);
-    
+
     const body: Record<string, unknown> = { ...params };
     if (this.config.minScore !== undefined) {
       body.min_score = this.config.minScore;
@@ -191,6 +195,118 @@ export class EthosAuth {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'unknown_error' }));
       throw EthosAuthError.fromResponse(error, 'farcaster_verify_error');
+    }
+
+    return this.parseAuthResponse(await response.json());
+  }
+
+  // --------------------------------------------------------------------------
+  // WebAuthn/Passkey Flow
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get WebAuthn registration options from the server
+   *
+   * Call this to start the passkey registration flow.
+   *
+   * @param username - Display name for the credential
+   * @returns Registration options to pass to WebAuthn API
+   */
+  async getWebAuthnRegistrationOptions(username: string): Promise<WebAuthnRegistrationOptions> {
+    const url = new URL(ENDPOINTS.WEBAUTHN_REGISTER_OPTIONS, this.config.authServerUrl);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw EthosAuthError.fromResponse(error, 'webauthn_options_error');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Verify WebAuthn registration credential
+   *
+   * Call this after the user creates a credential with navigator.credentials.create()
+   *
+   * @param credential - Serialized credential from WebAuthn API
+   * @returns Authentication result
+   */
+  async verifyWebAuthnRegistration(credential: WebAuthnRegistrationCredential): Promise<AuthResult> {
+    const url = new URL(ENDPOINTS.WEBAUTHN_REGISTER_VERIFY, this.config.authServerUrl);
+
+    const body: Record<string, unknown> = { credential };
+    if (this.config.minScore !== undefined) {
+      body.min_score = this.config.minScore;
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw EthosAuthError.fromResponse(error, 'webauthn_register_error');
+    }
+
+    return this.parseAuthResponse(await response.json());
+  }
+
+  /**
+   * Get WebAuthn authentication options from the server
+   *
+   * Call this to start the passkey authentication flow.
+   *
+   * @returns Authentication options to pass to WebAuthn API
+   */
+  async getWebAuthnAuthenticationOptions(): Promise<WebAuthnAuthenticationOptions> {
+    const url = new URL(ENDPOINTS.WEBAUTHN_AUTH_OPTIONS, this.config.authServerUrl);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw EthosAuthError.fromResponse(error, 'webauthn_options_error');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Verify WebAuthn authentication credential
+   *
+   * Call this after the user authenticates with navigator.credentials.get()
+   *
+   * @param credential - Serialized credential from WebAuthn API
+   * @returns Authentication result
+   */
+  async verifyWebAuthnAuthentication(credential: WebAuthnAuthenticationCredential): Promise<AuthResult> {
+    const url = new URL(ENDPOINTS.WEBAUTHN_AUTH_VERIFY, this.config.authServerUrl);
+
+    const body: Record<string, unknown> = { credential };
+    if (this.config.minScore !== undefined) {
+      body.min_score = this.config.minScore;
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'unknown_error' }));
+      throw EthosAuthError.fromResponse(error, 'webauthn_auth_error');
     }
 
     return this.parseAuthResponse(await response.json());

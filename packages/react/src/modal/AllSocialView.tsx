@@ -19,7 +19,7 @@ interface AllSocialViewProps {
 }
 
 // All available social providers
-const ALL_PROVIDERS: SocialProviderId[] = ['twitter', 'discord', 'telegram', 'farcaster'];
+const ALL_PROVIDERS: SocialProviderId[] = ['twitter', 'discord', 'telegram', 'farcaster', 'github'];
 
 /**
  * Back button component
@@ -65,7 +65,7 @@ export function AllSocialView({
       {/* Header */}
       <div style={{ marginBottom: '20px' }}>
         <BackButton onClick={onBack} theme={t} />
-        
+
         <h2
           style={{
             margin: '8px 0 0',
@@ -76,7 +76,7 @@ export function AllSocialView({
         >
           Log in with social
         </h2>
-        
+
         <p
           style={{
             margin: '4px 0 0',
@@ -93,7 +93,7 @@ export function AllSocialView({
         {providers.map((providerId) => {
           const provider = SOCIAL_PROVIDERS[providerId];
           const IconComponent = SOCIAL_ICONS[providerId];
-          
+
           return (
             <LoginOptionButton
               key={providerId}

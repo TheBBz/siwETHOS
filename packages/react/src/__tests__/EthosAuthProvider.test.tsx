@@ -49,7 +49,7 @@ const mockAuthResult: AuthResult = {
 // Test component that uses session
 function TestComponent() {
   const { isAuthenticated, isLoading, user, login, logout } = useEthosSession();
-  
+
   return (
     <div>
       <div data-testid="loading">{isLoading ? 'loading' : 'loaded'}</div>
@@ -130,7 +130,7 @@ describe('EthosAuthProvider', () => {
         <div data-testid="child">Hello</div>
       </EthosAuthProvider>
     );
-    
+
     expect(screen.getByTestId('child')).toHaveTextContent('Hello');
   });
 
@@ -140,12 +140,12 @@ describe('EthosAuthProvider', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     // Wait for loading to complete
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('loaded');
     });
-    
+
     expect(screen.getByTestId('authenticated')).toHaveTextContent('no');
     expect(screen.getByTestId('user')).toHaveTextContent('none');
   });
@@ -156,15 +156,15 @@ describe('EthosAuthProvider', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     // Wait for initial load
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('loaded');
     });
-    
+
     // Login
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('yes');
       expect(screen.getByTestId('user')).toHaveTextContent('Test User');
@@ -177,21 +177,21 @@ describe('EthosAuthProvider', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     // Wait for initial load
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('loaded');
     });
-    
+
     // Login first
     fireEvent.click(screen.getByText('Login'));
     await waitFor(() => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('yes');
     });
-    
+
     // Then logout
     fireEvent.click(screen.getByText('Logout'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('no');
       expect(screen.getByTestId('user')).toHaveTextContent('none');
@@ -200,26 +200,26 @@ describe('EthosAuthProvider', () => {
 
   it('should call onAuthStateChange callback', async () => {
     const onAuthStateChange = vi.fn();
-    
+
     render(
-      <EthosAuthProvider 
+      <EthosAuthProvider
         storageType="memory"
         onAuthStateChange={onAuthStateChange}
       >
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     // Wait for initial callback (unauthenticated)
     await waitFor(() => {
       expect(onAuthStateChange).toHaveBeenCalledWith(
         expect.objectContaining({ isAuthenticated: false })
       );
     });
-    
+
     // Login and check callback
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(onAuthStateChange).toHaveBeenCalledWith(
         expect.objectContaining({ isAuthenticated: true })
@@ -231,12 +231,12 @@ describe('EthosAuthProvider', () => {
 describe('useEthosSession', () => {
   it('should throw error when used outside provider', () => {
     // Suppress console.error for this test
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
     expect(() => {
       render(<TestComponent />);
     }).toThrow('useEthosAuthContext must be used within an EthosAuthProvider');
-    
+
     spy.mockRestore();
   });
 });
@@ -256,7 +256,7 @@ describe('useEthosUser', () => {
         <UserComponent />
       </EthosAuthProvider>
     );
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('user-name')).toHaveTextContent('none');
     });
@@ -269,9 +269,9 @@ describe('useEthosUser', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('user-name')).toHaveTextContent('Test User');
     });
@@ -293,7 +293,7 @@ describe('useEthosScore', () => {
         <ScoreComponent />
       </EthosAuthProvider>
     );
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('score')).toHaveTextContent('none');
       expect(screen.getByTestId('tier')).toHaveTextContent('none');
@@ -308,12 +308,12 @@ describe('useEthosScore', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('score')).toHaveTextContent('1250');
-      expect(screen.getByTestId('tier')).toHaveTextContent('trusted');
+      expect(screen.getByTestId('tier')).toHaveTextContent('known'); // 1250 is in known tier (1200-1399)
       expect(screen.getByTestId('color')).not.toHaveTextContent('none');
     });
   });
@@ -334,7 +334,7 @@ describe('useMinScore', () => {
         <MinScoreComponent minScore={500} />
       </EthosAuthProvider>
     );
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('meets')).toHaveTextContent('no');
       expect(screen.getByTestId('score')).toHaveTextContent('none');
@@ -348,9 +348,9 @@ describe('useMinScore', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('meets')).toHaveTextContent('yes');
       expect(screen.getByTestId('score')).toHaveTextContent('1250');
@@ -364,9 +364,9 @@ describe('useMinScore', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('meets')).toHaveTextContent('no');
       expect(screen.getByTestId('required')).toHaveTextContent('1500');
@@ -389,12 +389,12 @@ describe('useIsAuthenticated', () => {
         <AuthStatusComponent />
       </EthosAuthProvider>
     );
-    
+
     // Eventually loading should be false
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('no');
     });
-    
+
     expect(screen.getByTestId('auth')).toHaveTextContent('no');
   });
 });
@@ -414,7 +414,7 @@ describe('useAccessToken', () => {
         <TokenComponent />
       </EthosAuthProvider>
     );
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('token')).toHaveTextContent('none');
     });
@@ -427,9 +427,9 @@ describe('useAccessToken', () => {
         <TestComponent />
       </EthosAuthProvider>
     );
-    
+
     fireEvent.click(screen.getByText('Login'));
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('token')).toHaveTextContent('test-access-token');
     });
@@ -443,7 +443,7 @@ describe('useIsInsideEthosProvider', () => {
         <InsideProviderComponent />
       </EthosAuthProvider>
     );
-    
+
     expect(screen.getByTestId('inside')).toHaveTextContent('yes');
   });
 

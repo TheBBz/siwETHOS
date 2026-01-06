@@ -13,12 +13,12 @@
 /**
  * Supported authentication methods
  */
-export type AuthMethod = 'wallet' | 'discord' | 'telegram' | 'farcaster' | 'twitter';
+export type AuthMethod = 'wallet' | 'discord' | 'telegram' | 'farcaster' | 'twitter' | 'github' | 'passkey';
 
 /**
  * Supported social authentication providers
  */
-export type SocialProvider = 'discord' | 'telegram' | 'farcaster' | 'twitter';
+export type SocialProvider = 'discord' | 'telegram' | 'farcaster' | 'twitter' | 'github';
 
 // ============================================================================
 // Configuration
@@ -242,3 +242,121 @@ export interface SessionStorage {
  * Auth state change callback
  */
 export type AuthStateChangeCallback = (state: SessionState) => void;
+
+// ============================================================================
+// WebAuthn/Passkey Types
+// ============================================================================
+
+/**
+ * WebAuthn registration options from server
+ */
+export interface WebAuthnRegistrationOptions {
+  /** Challenge for registration */
+  challenge: string;
+  /** Relying party info */
+  rp: {
+    id: string;
+    name: string;
+  };
+  /** User info */
+  user: {
+    id: string;
+    name: string;
+    displayName: string;
+  };
+  /** Supported algorithms */
+  pubKeyCredParams: Array<{
+    type: 'public-key';
+    alg: number;
+  }>;
+  /** Timeout in milliseconds */
+  timeout?: number;
+  /** Authenticator selection criteria */
+  authenticatorSelection?: {
+    authenticatorAttachment?: 'platform' | 'cross-platform';
+    residentKey?: 'required' | 'preferred' | 'discouraged';
+    userVerification?: 'required' | 'preferred' | 'discouraged';
+  };
+  /** Attestation preference */
+  attestation?: 'none' | 'indirect' | 'direct';
+  /** Existing credentials to exclude */
+  excludeCredentials?: Array<{
+    id: string;
+    type: 'public-key';
+    transports?: string[];
+  }>;
+}
+
+/**
+ * WebAuthn authentication options from server
+ */
+export interface WebAuthnAuthenticationOptions {
+  /** Challenge for authentication */
+  challenge: string;
+  /** Relying party ID */
+  rpId: string;
+  /** Timeout in milliseconds */
+  timeout?: number;
+  /** User verification requirement */
+  userVerification?: 'required' | 'preferred' | 'discouraged';
+  /** Allowed credentials (empty for discoverable credentials) */
+  allowCredentials?: Array<{
+    id: string;
+    type: 'public-key';
+    transports?: string[];
+  }>;
+}
+
+/**
+ * Serialized registration credential for server verification
+ */
+export interface WebAuthnRegistrationCredential {
+  /** Credential ID (base64url) */
+  id: string;
+  /** Raw credential ID (base64url) */
+  rawId: string;
+  /** Credential type */
+  type: 'public-key';
+  /** Attestation response */
+  response: {
+    /** Client data JSON (base64url) */
+    clientDataJSON: string;
+    /** Attestation object (base64url) */
+    attestationObject: string;
+    /** Authenticator data (base64url, optional) */
+    authenticatorData?: string;
+    /** Public key (base64url, optional) */
+    publicKey?: string;
+    /** Algorithm used */
+    publicKeyAlgorithm?: number;
+    /** Supported transports */
+    transports?: string[];
+  };
+  /** Authenticator attachment */
+  authenticatorAttachment?: 'platform' | 'cross-platform';
+}
+
+/**
+ * Serialized authentication credential for server verification
+ */
+export interface WebAuthnAuthenticationCredential {
+  /** Credential ID (base64url) */
+  id: string;
+  /** Raw credential ID (base64url) */
+  rawId: string;
+  /** Credential type */
+  type: 'public-key';
+  /** Assertion response */
+  response: {
+    /** Client data JSON (base64url) */
+    clientDataJSON: string;
+    /** Authenticator data (base64url) */
+    authenticatorData: string;
+    /** Signature (base64url) */
+    signature: string;
+    /** User handle (base64url, optional) */
+    userHandle?: string;
+  };
+  /** Authenticator attachment */
+  authenticatorAttachment?: 'platform' | 'cross-platform';
+}

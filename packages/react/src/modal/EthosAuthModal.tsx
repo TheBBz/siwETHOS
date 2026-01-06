@@ -3,14 +3,38 @@
  * Privy-style authentication modal with wallet + social login support
  */
 
-import { useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import { EthosWalletAuth, EthosAuth } from '@thebbz/siwe-ethos';
 import type { AuthResult } from '@thebbz/siwe-ethos';
+
+// WebAuthn helper functions
+function base64UrlEncode(buffer: Uint8Array): string {
+  const base64 = btoa(String.fromCharCode(...buffer));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecode(str: string): Uint8Array {
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(base64 + padding);
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+
+async function isWebAuthnSupported(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (!window.PublicKeyCredential) return false;
+  try {
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch {
+    return false;
+  }
+}
 import { ModalOverlay } from './ModalOverlay';
 import { MainSelectView } from './MainSelectView';
 import { AllWalletsView } from './AllWalletsView';
 import { AllSocialView } from './AllSocialView';
 import { TelegramWidgetView, type TelegramAuthData } from './TelegramWidgetView';
+import { PasskeyView } from './PasskeyView';
 import { ProgressView } from '../components/ProgressView';
 import { SuccessView } from '../components/SuccessView';
 import { ErrorView } from '../components/ErrorView';
@@ -68,9 +92,15 @@ export function EthosAuthModal({
   const t = { ...DEFAULT_THEME, ...theme };
   const { state, actions } = useEthosModal();
   const { addRecentLogin } = useRecentLogins();
-  
+
   // Track if we've already handled the initial error
   const initialErrorHandledRef = useRef(false);
+
+  // WebAuthn support detection
+  const [webAuthnSupported, setWebAuthnSupported] = useState(false);
+  useEffect(() => {
+    isWebAuthnSupported().then(setWebAuthnSupported);
+  }, []);
 
   // Initialize auth clients
   const walletAuth = useMemo(() => EthosWalletAuth.init({
@@ -350,6 +380,179 @@ export function EthosAuthModal({
     }
   }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
 
+  // Handle passkey button click - show passkey view
+  const handlePasskey = useCallback(() => {
+    actions.setView('passkey');
+  }, [actions]);
+
+  // Handle passkey authentication
+  const handlePasskeyAuth = useCallback(async () => {
+    actions.setView('verifying');
+    actions.setStatus('verifying');
+
+    try {
+      // Get authentication options from server
+      const options = await socialAuth.getWebAuthnAuthenticationOptions();
+
+      // Convert challenge from base64url to ArrayBuffer
+      const challengeBuffer = base64UrlDecode(options.challenge);
+
+      // Build WebAuthn options
+      const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+        challenge: challengeBuffer.buffer as ArrayBuffer,
+        rpId: options.rpId,
+        timeout: options.timeout || 60000,
+        userVerification: options.userVerification || 'preferred',
+        allowCredentials: options.allowCredentials?.map(cred => ({
+          id: base64UrlDecode(cred.id).buffer as ArrayBuffer,
+          type: cred.type,
+          transports: cred.transports as AuthenticatorTransport[] | undefined,
+        })),
+      };
+
+      // Call WebAuthn API
+      const credential = await navigator.credentials.get({
+        publicKey: publicKeyOptions,
+      }) as PublicKeyCredential;
+
+      if (!credential) {
+        throw new Error('No credential returned');
+      }
+
+      const response = credential.response as AuthenticatorAssertionResponse;
+
+      // Serialize credential for server
+      const serializedCredential = {
+        id: credential.id,
+        rawId: base64UrlEncode(new Uint8Array(credential.rawId)),
+        type: credential.type as 'public-key',
+        response: {
+          clientDataJSON: base64UrlEncode(new Uint8Array(response.clientDataJSON)),
+          authenticatorData: base64UrlEncode(new Uint8Array(response.authenticatorData)),
+          signature: base64UrlEncode(new Uint8Array(response.signature)),
+          userHandle: response.userHandle
+            ? base64UrlEncode(new Uint8Array(response.userHandle))
+            : undefined,
+        },
+        authenticatorAttachment: credential.authenticatorAttachment as 'platform' | 'cross-platform' | undefined,
+      };
+
+      // Verify with server
+      const result = await socialAuth.verifyWebAuthnAuthentication(serializedCredential);
+
+      // Save to recent logins
+      addRecentLogin({
+        type: 'wallet',
+        id: 'metamask', // Using metamask as placeholder for passkey
+        name: 'Passkey',
+        identifier: result.user.ethosUsername || result.user.name,
+      });
+
+      // Success
+      actions.setSuccess(result.user);
+      onSuccess?.(result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Passkey authentication failed';
+
+      // Check for user cancellation
+      if (errorMessage.includes('cancelled') || errorMessage.includes('AbortError')) {
+        actions.setView('passkey');
+        return;
+      }
+
+      actions.setError(errorMessage);
+      onError?.(error instanceof Error ? error : new Error(errorMessage));
+    }
+  }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
+
+  // Handle passkey registration
+  const handlePasskeyRegister = useCallback(async (username: string) => {
+    actions.setView('verifying');
+    actions.setStatus('verifying');
+
+    try {
+      // Get registration options from server
+      const options = await socialAuth.getWebAuthnRegistrationOptions(username);
+
+      // Convert challenge and user ID from base64url to ArrayBuffer
+      const challengeBuffer = base64UrlDecode(options.challenge);
+      const userIdBuffer = base64UrlDecode(options.user.id);
+
+      // Build WebAuthn options
+      const publicKeyOptions: PublicKeyCredentialCreationOptions = {
+        challenge: challengeBuffer.buffer as ArrayBuffer,
+        rp: options.rp,
+        user: {
+          id: userIdBuffer.buffer as ArrayBuffer,
+          name: options.user.name,
+          displayName: options.user.displayName,
+        },
+        pubKeyCredParams: options.pubKeyCredParams,
+        timeout: options.timeout || 60000,
+        authenticatorSelection: options.authenticatorSelection || {
+          residentKey: 'preferred',
+          userVerification: 'preferred',
+        },
+        attestation: options.attestation || 'none',
+        excludeCredentials: options.excludeCredentials?.map(cred => ({
+          id: base64UrlDecode(cred.id).buffer as ArrayBuffer,
+          type: cred.type,
+          transports: cred.transports as AuthenticatorTransport[] | undefined,
+        })),
+      };
+
+      // Call WebAuthn API
+      const credential = await navigator.credentials.create({
+        publicKey: publicKeyOptions,
+      }) as PublicKeyCredential;
+
+      if (!credential) {
+        throw new Error('No credential returned');
+      }
+
+      const response = credential.response as AuthenticatorAttestationResponse;
+
+      // Serialize credential for server
+      const serializedCredential = {
+        id: credential.id,
+        rawId: base64UrlEncode(new Uint8Array(credential.rawId)),
+        type: credential.type as 'public-key',
+        response: {
+          clientDataJSON: base64UrlEncode(new Uint8Array(response.clientDataJSON)),
+          attestationObject: base64UrlEncode(new Uint8Array(response.attestationObject)),
+          transports: (response as AuthenticatorAttestationResponse & { getTransports?: () => string[] }).getTransports?.(),
+        },
+        authenticatorAttachment: credential.authenticatorAttachment as 'platform' | 'cross-platform' | undefined,
+      };
+
+      // Verify with server
+      const result = await socialAuth.verifyWebAuthnRegistration(serializedCredential);
+
+      // Save to recent logins
+      addRecentLogin({
+        type: 'wallet',
+        id: 'metamask', // Using metamask as placeholder for passkey
+        name: 'Passkey',
+        identifier: username,
+      });
+
+      // Success
+      actions.setSuccess(result.user);
+      onSuccess?.(result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Passkey registration failed';
+
+      // Check for user cancellation
+      if (errorMessage.includes('cancelled') || errorMessage.includes('AbortError')) {
+        actions.setView('passkey');
+        return;
+      }
+
+      actions.setError(errorMessage);
+      onError?.(error instanceof Error ? error : new Error(errorMessage));
+    }
+  }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
+
   // Handle close with reset
   const handleClose = useCallback(() => {
     actions.reset();
@@ -386,6 +589,7 @@ export function EthosAuthModal({
             onShowAllWallets={() => actions.setView('all-wallets')}
             onShowAllSocial={() => actions.setView('all-social')}
             showPasskey={showPasskey}
+            onPasskey={handlePasskey}
             title={title}
             termsUrl={termsUrl}
             privacyUrl={privacyUrl}
@@ -422,6 +626,17 @@ export function EthosAuthModal({
             theme={t}
           />
         ) : null;
+
+      case 'passkey':
+        return (
+          <PasskeyView
+            onAuthenticate={handlePasskeyAuth}
+            onRegister={handlePasskeyRegister}
+            onBack={actions.goBack}
+            isSupported={webAuthnSupported}
+            theme={t}
+          />
+        );
 
       case 'connecting':
       case 'signing':

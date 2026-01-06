@@ -15,10 +15,10 @@ import {
   EthosLogo,
   EthosShield,
 } from '../components/Icons';
-import type { 
-  WalletId, 
-  SocialProviderId, 
-  ModalTheme 
+import type {
+  WalletId,
+  SocialProviderId,
+  ModalTheme
 } from '../types';
 import { WALLETS, DEFAULT_THEME } from '../types';
 
@@ -56,7 +56,7 @@ interface MainSelectViewProps {
 // Default order of wallets to show in main view
 const MAIN_WALLETS: WalletId[] = ['metamask', 'rabby'];
 // Default social providers to show
-const ALL_SOCIAL: SocialProviderId[] = ['twitter', 'discord', 'telegram', 'farcaster'];
+const ALL_SOCIAL: SocialProviderId[] = ['twitter', 'discord', 'telegram', 'farcaster', 'github'];
 
 /**
  * Main login selector view
@@ -104,7 +104,7 @@ export function MainSelectView({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EthosLogo size={48} />
         </div>
-        
+
         <h2
           style={{
             margin: '24px 0 0',
@@ -120,15 +120,15 @@ export function MainSelectView({
 
       {/* Login options */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        
+
         {/* Recent logins section */}
         {displayRecent.length > 0 && (
           <>
             {displayRecent.map((recent) => {
-              const IconComponent = recent.type === 'wallet' 
+              const IconComponent = recent.type === 'wallet'
                 ? WALLET_ICONS[recent.id as WalletId] || WalletIcon
                 : SOCIAL_ICONS[recent.id as SocialProviderId] || SocialIcon;
-              
+
               return (
                 <LoginOptionButton
                   key={`${recent.type}-${recent.id}`}
@@ -156,12 +156,12 @@ export function MainSelectView({
           const wallet = WALLETS[walletId];
           const IconComponent = WALLET_ICONS[walletId];
           const installed = isInstalled(walletId);
-          
+
           // Skip if already in recent
           if (displayRecent.some(r => r.type === 'wallet' && r.id === walletId)) {
             return null;
           }
-          
+
           return (
             <LoginOptionButton
               key={walletId}
@@ -242,7 +242,7 @@ export function MainSelectView({
             Privacy Policy
           </a>
         </p>
-        
+
         <p
           style={{
             margin: '16px 0 0',
@@ -255,9 +255,9 @@ export function MainSelectView({
           }}
         >
           Protected by
-          <span style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
             gap: '4px',
             color: t.textSecondary,
             fontWeight: 500,

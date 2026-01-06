@@ -204,6 +204,7 @@ export type ModalView =
   | 'all-wallets'    // Expanded view showing all wallets
   | 'all-social'     // Expanded view showing all social providers
   | 'telegram-widget' // Telegram Login Widget view
+  | 'passkey'        // Passkey authentication view
   | 'connecting'     // Connecting to wallet/provider
   | 'signing'        // Waiting for signature
   | 'verifying'      // Verifying with server
