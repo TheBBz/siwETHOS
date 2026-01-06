@@ -24,7 +24,7 @@ describe('DiscordProvider', () => {
   describe('getAuthorizationUrl', () => {
     it('should generate correct authorization URL', () => {
       const provider = new DiscordProvider(config);
-      const url = provider.getAuthorizationUrl();
+      const { url, state } = provider.getAuthorizationUrl();
 
       expect(url).toContain('discord.com');
       expect(url).toContain('authorize');
@@ -32,13 +32,26 @@ describe('DiscordProvider', () => {
       expect(url).toContain('redirect_uri=https%3A%2F%2Fexample.com%2Fcallback');
       expect(url).toContain('response_type=code');
       expect(url).toContain('scope=identify');
+      expect(state).toBeDefined();
+      expect(state.length).toBe(32);
     });
 
     it('should include state parameter when provided', () => {
       const provider = new DiscordProvider(config);
-      const url = provider.getAuthorizationUrl({ state: 'csrf-token' });
+      const { url, state } = provider.getAuthorizationUrl({ state: 'csrf-token' });
 
       expect(url).toContain('state=csrf-token');
+      expect(state).toBe('csrf-token');
+    });
+
+    it('should auto-generate state when not provided', () => {
+      const provider = new DiscordProvider(config);
+      const { url, state } = provider.getAuthorizationUrl();
+
+      expect(url).toContain('state=');
+      expect(state).toBeDefined();
+      expect(state.length).toBe(32);
+      expect(url).toContain(`state=${state}`);
     });
 
     it('should use custom scopes when provided', () => {
@@ -46,7 +59,7 @@ describe('DiscordProvider', () => {
         ...config,
         scopes: ['identify', 'email', 'guilds'],
       });
-      const url = provider.getAuthorizationUrl();
+      const { url } = provider.getAuthorizationUrl();
 
       expect(url).toContain('scope=identify+email+guilds');
     });

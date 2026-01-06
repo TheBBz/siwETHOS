@@ -16,8 +16,8 @@ import { TelegramVerificationError } from './types';
 export * from './types';
 export { TelegramVerificationError } from './types';
 
-/** Maximum age of auth data in seconds (default: 1 day) */
-const DEFAULT_MAX_AGE = 86400;
+/** Maximum age of auth data in seconds (default: 5 minutes) */
+const DEFAULT_MAX_AGE = 300;
 
 /**
  * Compute SHA256 hash using Web Crypto API

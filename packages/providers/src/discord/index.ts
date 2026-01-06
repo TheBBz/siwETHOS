@@ -19,6 +19,20 @@ const DISCORD_API_BASE = 'https://discord.com/api/v10';
 const DISCORD_OAUTH_BASE = 'https://discord.com/api/oauth2';
 
 /**
+ * Generate a cryptographically secure random state for CSRF protection
+ */
+function generateState(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const randomValues = new Uint8Array(32);
+  crypto.getRandomValues(randomValues);
+  let result = '';
+  for (let i = 0; i < 32; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+  return result;
+}
+
+/**
  * Discord OAuth2 Provider
  *
  * @example
@@ -29,10 +43,11 @@ const DISCORD_OAUTH_BASE = 'https://discord.com/api/oauth2';
  *   redirectUri: 'https://myapp.com/auth/discord/callback',
  * });
  *
- * // Get authorization URL
- * const url = discord.getAuthorizationUrl({ state: 'csrf-token' });
+ * // Get authorization URL (state is auto-generated for CSRF protection)
+ * const { url, state } = discord.getAuthorizationUrl();
+ * // Store state in session for verification on callback
  *
- * // After callback, exchange code for user info
+ * // After callback, verify state and exchange code for user info
  * const result = await discord.handleCallback(code);
  * const lookup = discord.getEthosLookup(result);
  * // lookup = { provider: 'discord', userId: '123456789', username: 'user' }
@@ -51,18 +66,17 @@ export class DiscordProvider {
    * Get the Discord OAuth2 authorization URL
    *
    * @param params - Authorization parameters
-   * @returns The URL to redirect the user to
+   * @returns Object containing the URL and the state parameter used
    */
-  getAuthorizationUrl(params: { state?: string } = {}): string {
+  getAuthorizationUrl(params: { state?: string } = {}): { url: string; state: string } {
+    const state = params.state ?? generateState();
     const url = new URL('/authorize', DISCORD_OAUTH_BASE);
     url.searchParams.set('client_id', this.config.clientId);
     url.searchParams.set('redirect_uri', this.config.redirectUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', this.scopes.join(' '));
-    if (params.state) {
-      url.searchParams.set('state', params.state);
-    }
-    return url.toString();
+    url.searchParams.set('state', state);
+    return { url: url.toString(), state };
   }
 
   /**

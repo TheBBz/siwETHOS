@@ -99,7 +99,7 @@ describe('Nonce Utilities', () => {
       const before = Date.now();
       const result = createTimedNonce(60); // 60 seconds
       const after = Date.now();
-      
+
       expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60000);
       expect(result.expiresAt).toBeLessThanOrEqual(after + 60000 + 100);
     });
@@ -326,18 +326,20 @@ describe('DiscordProvider', () => {
   });
 
   it('should generate correct authorization URL', () => {
-    const url = discord.getAuthorizationUrl();
+    const { url, state } = discord.getAuthorizationUrl();
     expect(url).toContain('https://discord.com');
     expect(url).toContain('authorize');
     expect(url).toContain('client_id=test-client-id');
     expect(url).toContain('redirect_uri=https%3A%2F%2Fexample.com%2Fcallback');
     expect(url).toContain('response_type=code');
     expect(url).toContain('scope=identify');
+    expect(state).toBeDefined();
   });
 
   it('should include state in authorization URL when provided', () => {
-    const url = discord.getAuthorizationUrl({ state: 'csrf-token-123' });
+    const { url, state } = discord.getAuthorizationUrl({ state: 'csrf-token-123' });
     expect(url).toContain('state=csrf-token-123');
+    expect(state).toBe('csrf-token-123');
   });
 
   it('should support custom scopes', () => {
@@ -347,7 +349,7 @@ describe('DiscordProvider', () => {
       redirectUri: 'https://example.com/callback',
       scopes: ['identify', 'email'],
     });
-    const url = customDiscord.getAuthorizationUrl();
+    const { url } = customDiscord.getAuthorizationUrl();
     expect(url).toContain('scope=identify+email');
   });
 
@@ -630,29 +632,42 @@ describe('Score Validation', () => {
 
   describe('getScoreTier', () => {
     it('should return correct tier for each range', () => {
+      // Matches Ethos API tier names
       expect(getScoreTier(0)).toBe('untrusted');
       expect(getScoreTier(399)).toBe('untrusted');
       expect(getScoreTier(400)).toBe('questionable');
       expect(getScoreTier(799)).toBe('questionable');
       expect(getScoreTier(800)).toBe('neutral');
       expect(getScoreTier(1199)).toBe('neutral');
-      expect(getScoreTier(1200)).toBe('trusted');
-      expect(getScoreTier(1599)).toBe('trusted');
+      expect(getScoreTier(1200)).toBe('known');
+      expect(getScoreTier(1399)).toBe('known');
+      expect(getScoreTier(1400)).toBe('established');
+      expect(getScoreTier(1599)).toBe('established');
       expect(getScoreTier(1600)).toBe('reputable');
-      expect(getScoreTier(1999)).toBe('reputable');
-      expect(getScoreTier(2000)).toBe('exemplary');
-      expect(getScoreTier(2800)).toBe('exemplary');
+      expect(getScoreTier(1799)).toBe('reputable');
+      expect(getScoreTier(1800)).toBe('exemplary');
+      expect(getScoreTier(1999)).toBe('exemplary');
+      expect(getScoreTier(2000)).toBe('distinguished');
+      expect(getScoreTier(2199)).toBe('distinguished');
+      expect(getScoreTier(2200)).toBe('revered');
+      expect(getScoreTier(2399)).toBe('revered');
+      expect(getScoreTier(2400)).toBe('renowned');
+      expect(getScoreTier(2800)).toBe('renowned');
     });
   });
 
   describe('SCORE_TIERS', () => {
-    it('should have correct tier boundaries', () => {
+    it('should have correct tier boundaries matching Ethos API', () => {
       expect(SCORE_TIERS.untrusted).toEqual({ min: 0, max: 399 });
       expect(SCORE_TIERS.questionable).toEqual({ min: 400, max: 799 });
       expect(SCORE_TIERS.neutral).toEqual({ min: 800, max: 1199 });
-      expect(SCORE_TIERS.trusted).toEqual({ min: 1200, max: 1599 });
-      expect(SCORE_TIERS.reputable).toEqual({ min: 1600, max: 1999 });
-      expect(SCORE_TIERS.exemplary).toEqual({ min: 2000, max: 2800 });
+      expect(SCORE_TIERS.known).toEqual({ min: 1200, max: 1399 });
+      expect(SCORE_TIERS.established).toEqual({ min: 1400, max: 1599 });
+      expect(SCORE_TIERS.reputable).toEqual({ min: 1600, max: 1799 });
+      expect(SCORE_TIERS.exemplary).toEqual({ min: 1800, max: 1999 });
+      expect(SCORE_TIERS.distinguished).toEqual({ min: 2000, max: 2199 });
+      expect(SCORE_TIERS.revered).toEqual({ min: 2200, max: 2399 });
+      expect(SCORE_TIERS.renowned).toEqual({ min: 2400, max: 2800 });
     });
   });
 });
