@@ -19,10 +19,12 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 ## Features
 
 - 🔐 **Wallet Authentication** - Sign-In with Ethereum (EIP-4361) standard
+- 🔑 **Passkey/WebAuthn** - Passwordless auth with Face ID, Touch ID, Windows Hello
 - 🦊 **Multi-Wallet Support** - MetaMask, Rabby, Phantom, Zerion, Coinbase, Brave
-- 🌐 **Social Logins** - Farcaster (QR code), Discord, Twitter/X, Telegram
+- 🌐 **Social Logins** - Farcaster (QR code), Discord, Twitter/X, Telegram, GitHub
 - 📊 **Credibility Scores** - Access users' Ethos reputation data (0-2800)
 - 🔍 **Profile Lookup** - Fetch any Ethos profile by address, social handle, or ID
+- 🛡️ **Server Middleware** - JWT verification for Express.js and Next.js
 - ⚛️ **React Components** - Beautiful, animated auth modal with dark mode
 - ⚡ **No Gas Fees** - Signature-only verification, no transactions required
 - 🚀 **Self-Hostable** - Deploy on Vercel, Docker, or any platform
@@ -34,7 +36,8 @@ Wallet-based authentication for [Ethos Network](https://ethos.network). Let user
 |---------|---------|-------------|
 | [`@thebbz/siwe-ethos`](https://www.npmjs.com/package/@thebbz/siwe-ethos) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos) | Core SDK for authentication |
 | [`@thebbz/siwe-ethos-react`](https://www.npmjs.com/package/@thebbz/siwe-ethos-react) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-react.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-react) | React components & modal |
-| [`@thebbz/siwe-ethos-providers`](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-providers.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | Server-side SIWE utilities |
+| [`@thebbz/siwe-ethos-providers`](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-providers.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-providers) | Server-side auth providers & WebAuthn |
+| [`@thebbz/siwe-ethos-server`](https://www.npmjs.com/package/@thebbz/siwe-ethos-server) | [![npm](https://img.shields.io/npm/v/@thebbz/siwe-ethos-server.svg)](https://www.npmjs.com/package/@thebbz/siwe-ethos-server) | Express/Next.js middleware |
 
 ## How It Works
 
@@ -83,26 +86,28 @@ npm install @thebbz/siwe-ethos-react
 
 ```tsx
 import { useState } from 'react';
-import { EthosAuthModal, EthosAuthResult } from '@thebbz/siwe-ethos-react';
+import { EthosAuthModal } from '@thebbz/siwe-ethos-react';
+import type { AuthResult } from '@thebbz/siwe-ethos';
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<EthosAuthResult | null>(null);
+  const [user, setUser] = useState<AuthResult['user'] | null>(null);
 
   return (
     <>
       <button onClick={() => setIsOpen(true)}>
-        {user ? `Hello, ${user.profile.displayName}` : 'Sign in with Ethos'}
+        {user ? `Hello, ${user.name}` : 'Sign in with Ethos'}
       </button>
 
       <EthosAuthModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSuccess={(result) => {
-          setUser(result);
+          setUser(result.user);
           setIsOpen(false);
-          console.log('Score:', result.profile.score); // Credibility score (0-2800)
+          console.log('Score:', result.user.ethosScore); // Credibility score (0-2800)
         }}
+        showPasskey={true}  // Enable passkey authentication
       />
     </>
   );
@@ -241,10 +246,58 @@ The authenticated user object includes:
 
 The `authMethod` field indicates how the user authenticated:
 - `wallet` - Signed in with Ethereum wallet (SIWE)
+- `passkey` - Signed in with passkey (WebAuthn)
 - `farcaster` - Signed in via Farcaster
 - `discord` - Signed in via Discord
 - `twitter` - Signed in via Twitter/X
 - `telegram` - Signed in via Telegram
+- `github` - Signed in via GitHub
+
+## Server Middleware
+
+Protect your API routes with JWT verification:
+
+```bash
+npm install @thebbz/siwe-ethos-server
+```
+
+### Express.js
+
+```typescript
+import express from 'express';
+import { ethosAuthMiddleware, requireMinScore } from '@thebbz/siwe-ethos-server/express';
+
+const app = express();
+
+// Protect all routes
+app.use(ethosAuthMiddleware({ secret: process.env.JWT_SECRET }));
+
+// Access authenticated user
+app.get('/api/profile', (req, res) => {
+  res.json({
+    profileId: req.ethosUser.profileId,
+    score: req.ethosUser.score,
+  });
+});
+
+// Require minimum score for premium features
+app.post('/api/premium', requireMinScore(1500), (req, res) => {
+  res.json({ message: 'Premium access granted' });
+});
+```
+
+### Next.js
+
+```typescript
+import { withEthosAuth } from '@thebbz/siwe-ethos-server/nextjs';
+
+export const GET = withEthosAuth(async (req, user) => {
+  return Response.json({
+    profileId: user.profileId,
+    score: user.score,
+  });
+});
+```
 
 ## Security
 
@@ -252,6 +305,7 @@ The `authMethod` field indicates how the user authenticated:
 - **Nonce protection** - Prevents replay attacks
 - **Message expiration** - SIWE messages expire after 5 minutes
 - **Cryptographic verification** - Signature validated on-chain
+- **Passkey security** - Phishing-resistant, biometric verification
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
@@ -268,7 +322,8 @@ signinwithethos/
 ├── packages/
 │   ├── sdk/                 # @thebbz/siwe-ethos - Client SDK
 │   ├── react/               # @thebbz/siwe-ethos-react - React components
-│   └── providers/           # @thebbz/siwe-ethos-providers - SIWE utilities
+│   ├── providers/           # @thebbz/siwe-ethos-providers - Auth providers & WebAuthn
+│   └── server/              # @thebbz/siwe-ethos-server - Express/Next.js middleware
 ├── docs/                    # Documentation
 │   ├── sdk-usage.md         # SDK integration guide
 │   └── self-hosting.md      # Deployment options

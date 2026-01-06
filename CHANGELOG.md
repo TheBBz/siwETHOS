@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-06
+
+### Added
+
+#### Server Middleware (`@thebbz/siwe-ethos-server`) - NEW PACKAGE
+- Express.js middleware with `ethosAuthMiddleware()` and `requireAuth()`
+- Next.js middleware with `withEthosAuth()` and `withOptionalEthosAuth()`
+- `requireMinScore(score)` middleware for score-gated access
+- JWT decoder and verifier with JWKS support
+- TypeScript types: `EthosAuthUser`, `EthosMiddlewareConfig`, `EthosJWTPayload`
+
+#### WebAuthn/Passkeys (`@thebbz/siwe-ethos-providers`)
+- `verifyRegistration()` - Verify WebAuthn registration credentials
+- `verifyAuthentication()` - Verify WebAuthn authentication assertions
+- `generateChallenge()` and `storeChallenge()` - Challenge management
+- Full FIDO2/WebAuthn server-side verification support
+
+#### React (`@thebbz/siwe-ethos-react`)
+- **PasskeyView component** - Passwordless auth with Face ID, Touch ID, Windows Hello
+  - Sign-in flow for existing passkeys
+  - Registration flow for new passkeys
+  - Add passkey flow for existing accounts
+- **TelegramWidgetView component** - Embedded Telegram Login Widget
+- New modal props: `showPasskey`, `telegramBotUsername`, `termsUrl`, `privacyUrl`
+- `'passkey'` added to `authMethod` type
+
+#### SDK (`@thebbz/siwe-ethos`)
+- WebAuthn methods:
+  - `getWebAuthnRegistrationOptions(username)` - Get registration options
+  - `verifyWebAuthnRegistration(credential)` - Verify registration
+  - `getWebAuthnAuthenticationOptions()` - Get authentication options
+  - `verifyWebAuthnAuthentication(credential)` - Verify authentication
+- WebAuthn endpoints added to SDK constants
+- WebAuthn types exported
+
+#### Providers (`@thebbz/siwe-ethos-providers`)
+- **GitHub OAuth provider** with `getAuthorizationUrl()`, `handleCallback()`, `getEthosLookup()`
+- **Profile enrichment utilities**:
+  - `getLinkedAccounts()` - Get normalized linked accounts
+  - `getProfileStats()` - Get aggregated profile stats
+  - `hasAttestation()` - Check for service attestation
+  - `weiToEth()` - Convert Wei to ETH
+- GitHub provider exported from package
+
+### Changed
+- Score tiers aligned with Ethos API v2 (0-2800 scale)
+- Discord provider now returns `{ url, state }` instead of string for CSRF protection
+- Telegram provider default `maxAge` reduced from 86400s (24h) to 300s (5min)
+
+### Security
+- **Discord OAuth**: Auto-generate cryptographic state parameter for CSRF protection
+- **Telegram**: Reduced maxAge to 5 minutes to limit replay attack window
+- Added `qs>=6.14.1` override to fix CVE-2025-15284 (DoS via prototype pollution)
+
+### Breaking Changes
+- `DiscordProvider.getAuthorizationUrl()` now returns `{ url: string; state: string }` instead of `string`
+
 ## [1.3.0] - 2025-12-07
 
 ### Added
@@ -120,6 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Message expiration for SIWE
 - Secure session handling
 
+[1.4.0]: https://github.com/thebbz/siwETHOS/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/thebbz/siwETHOS/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/thebbz/siwETHOS/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/thebbz/siwETHOS/compare/v1.0.0...v1.1.0
