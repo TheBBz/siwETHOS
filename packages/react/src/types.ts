@@ -16,7 +16,7 @@ export type LoginMethodType = 'wallet' | 'social';
 /**
  * Supported wallet identifiers
  */
-export type WalletId = 
+export type WalletId =
   | 'metamask'
   | 'rabby'
   | 'phantom'
@@ -27,7 +27,7 @@ export type WalletId =
 /**
  * Supported social provider identifiers
  */
-export type SocialProviderId = 'twitter' | 'discord' | 'telegram' | 'farcaster';
+export type SocialProviderId = 'twitter' | 'discord' | 'telegram' | 'farcaster' | 'github';
 
 /**
  * Combined login method identifier
@@ -142,6 +142,11 @@ export const SOCIAL_PROVIDERS: Record<SocialProviderId, SocialProviderConfig> = 
     name: 'Farcaster',
     isOAuth: true, // Uses redirect flow with Farcaster relay
   },
+  github: {
+    id: 'github',
+    name: 'GitHub',
+    isOAuth: true,
+  },
 };
 
 // ============================================================================
@@ -194,10 +199,11 @@ export function getScoreLabel(score: number): string {
 /**
  * Modal view states
  */
-export type ModalView = 
+export type ModalView =
   | 'main'           // Main view with recent, wallets, social sections
   | 'all-wallets'    // Expanded view showing all wallets
   | 'all-social'     // Expanded view showing all social providers
+  | 'telegram-widget' // Telegram Login Widget view
   | 'connecting'     // Connecting to wallet/provider
   | 'signing'        // Waiting for signature
   | 'verifying'      // Verifying with server
@@ -207,7 +213,7 @@ export type ModalView =
 /**
  * Connection status
  */
-export type ConnectionStatus = 
+export type ConnectionStatus =
   | 'idle'
   | 'connecting'
   | 'signing'
@@ -361,6 +367,8 @@ export interface EthosAuthModalProps extends ModalStyleProps {
   termsUrl?: string;
   /** Custom Privacy URL */
   privacyUrl?: string;
+  /** Telegram bot username for Login Widget */
+  telegramBotUsername?: string;
 }
 
 /**

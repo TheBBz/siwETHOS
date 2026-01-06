@@ -138,3 +138,94 @@ export type {
   EthosProfile,
   EthosScoreResult,
 } from './ethos';
+
+// ============================================================================
+// GitHub OAuth2 Provider
+// ============================================================================
+
+export { GithubProvider } from './github';
+export type {
+  GithubConfig,
+  GithubUser,
+  GithubTokenResponse,
+  GithubCallbackResult,
+  GithubEthosLookup,
+} from './github';
+
+// ============================================================================
+// Profile Enrichment Utilities
+// ============================================================================
+
+export {
+  // Account utilities
+  getLinkedAccounts,
+  hasAttestation,
+  getAttestationByService,
+  getAttestationsByService,
+  getLinkedServices,
+  countAccountsByService,
+  // Profile utilities
+  getProfileAge,
+  getProfileStats,
+  // Helper utilities
+  weiToEth,
+  formatDuration,
+} from './ethos/enrichment';
+
+export type {
+  LinkedAccount,
+  ProfileStats,
+} from './ethos/enrichment';
+
+// ============================================================================
+// WebAuthn / Passkey Support
+// ============================================================================
+
+export {
+  // Utilities
+  generateChallenge,
+  generateUserId,
+  isWebAuthnSupported,
+  isPlatformAuthenticatorAvailable,
+  isConditionalUISupported,
+  // Challenge management
+  createRegistrationChallenge,
+  createAuthenticationChallenge,
+  isChallengeExpired,
+  MemoryChallengeStore,
+  MemoryCredentialStore,
+  // Registration (browser)
+  buildRegistrationOptions,
+  createCredential,
+  // Authentication (browser)
+  buildAuthenticationOptions,
+  authenticate,
+  authenticateConditional,
+  // Verification (server)
+  verifyRegistration,
+  verifyAuthentication,
+} from './webauthn';
+
+export type {
+  // Core types
+  WebAuthnConfig,
+  WebAuthnUser,
+  RelyingParty,
+  StoredCredential,
+  StoredChallenge,
+  ChallengeStore,
+  CredentialStore,
+  // Options
+  PublicKeyCredentialCreationOptions,
+  PublicKeyCredentialRequestOptions,
+  RegistrationOptionsConfig,
+  AuthenticationOptionsConfig,
+  // Responses
+  RegistrationCredential,
+  AuthenticationCredential,
+  // Results
+  RegistrationVerificationResult,
+  AuthenticationVerificationResult,
+  VerificationFailure,
+  WebAuthnErrorCode,
+} from './webauthn';

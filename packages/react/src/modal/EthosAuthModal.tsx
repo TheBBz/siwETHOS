@@ -10,6 +10,7 @@ import { ModalOverlay } from './ModalOverlay';
 import { MainSelectView } from './MainSelectView';
 import { AllWalletsView } from './AllWalletsView';
 import { AllSocialView } from './AllSocialView';
+import { TelegramWidgetView, type TelegramAuthData } from './TelegramWidgetView';
 import { ProgressView } from '../components/ProgressView';
 import { SuccessView } from '../components/SuccessView';
 import { ErrorView } from '../components/ErrorView';
@@ -60,6 +61,7 @@ export function EthosAuthModal({
   showPasskey = false,
   termsUrl,
   privacyUrl,
+  telegramBotUsername,
   className,
   style,
 }: EthosAuthModalProps) {
@@ -302,12 +304,51 @@ export function EthosAuthModal({
 
     // For non-OAuth providers (Telegram widget, Farcaster SIWF)
     // These need special handling
-    actions.setStatus('connecting');
-    
-    // TODO: Implement Telegram widget and Farcaster SIWF flows
+    if (providerId === 'telegram') {
+      if (!telegramBotUsername) {
+        actions.setError('Telegram login requires telegramBotUsername prop');
+        return;
+      }
+      // Show Telegram widget view
+      actions.setView('telegram-widget');
+      return;
+    }
+
+    // Farcaster SIWF not yet implemented
     actions.setError(`${providerName} login is not yet implemented in the modal. Use the redirect flow.`);
-    
-  }, [socialAuth, actions, redirectUri, addRecentLogin]);
+
+  }, [socialAuth, actions, redirectUri, addRecentLogin, telegramBotUsername]);
+
+  // Handle Telegram widget callback
+  const handleTelegramAuth = useCallback(async (authData: TelegramAuthData) => {
+    actions.setView('verifying');
+    actions.setStatus('verifying');
+
+    try {
+      // Verify with server
+      const result = await socialAuth.verifyTelegram(authData);
+
+      // Save to recent logins
+      const displayName = authData.last_name
+        ? `${authData.first_name} ${authData.last_name}`
+        : authData.first_name;
+
+      addRecentLogin({
+        type: 'social',
+        id: 'telegram',
+        name: 'Telegram',
+        identifier: authData.username || displayName,
+      });
+
+      // Success
+      actions.setSuccess(result.user);
+      onSuccess?.(result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Telegram authentication failed';
+      actions.setError(errorMessage);
+      onError?.(error instanceof Error ? error : new Error(errorMessage));
+    }
+  }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
 
   // Handle close with reset
   const handleClose = useCallback(() => {
@@ -371,7 +412,17 @@ export function EthosAuthModal({
             theme={t}
           />
         );
-      
+
+      case 'telegram-widget':
+        return telegramBotUsername ? (
+          <TelegramWidgetView
+            botUsername={telegramBotUsername}
+            onAuth={handleTelegramAuth}
+            onBack={actions.goBack}
+            theme={t}
+          />
+        ) : null;
+
       case 'connecting':
       case 'signing':
       case 'verifying':
