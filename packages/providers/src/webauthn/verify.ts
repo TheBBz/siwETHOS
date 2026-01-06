@@ -278,12 +278,68 @@ export async function verifyAuthentication(
 // ============================================================================
 
 /**
+ * Convert ASN.1 DER encoded ECDSA signature to raw format (r || s)
+ * WebAuthn returns signatures in DER format, but Web Crypto expects raw format
+ */
+function derToRaw(derSignature: Uint8Array): Uint8Array {
+    // DER structure: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
+    let offset = 0;
+
+    // Check SEQUENCE tag
+    if (derSignature[offset++] !== 0x30) {
+        throw new Error('Invalid DER signature: missing SEQUENCE tag');
+    }
+
+    // Skip length byte(s)
+    let length = derSignature[offset++];
+    if (length & 0x80) {
+        // Long form length
+        const numLengthBytes = length & 0x7f;
+        offset += numLengthBytes;
+    }
+
+    // Parse r
+    if (derSignature[offset++] !== 0x02) {
+        throw new Error('Invalid DER signature: missing INTEGER tag for r');
+    }
+    let rLength = derSignature[offset++];
+    let rStart = offset;
+    offset += rLength;
+
+    // Parse s
+    if (derSignature[offset++] !== 0x02) {
+        throw new Error('Invalid DER signature: missing INTEGER tag for s');
+    }
+    let sLength = derSignature[offset++];
+    let sStart = offset;
+
+    // Extract r and s, removing any leading zero padding
+    let r = derSignature.slice(rStart, rStart + rLength);
+    let s = derSignature.slice(sStart, sStart + sLength);
+
+    // Remove leading zeros (DER adds them for positive numbers with high bit set)
+    while (r.length > 32 && r[0] === 0) {
+        r = r.slice(1);
+    }
+    while (s.length > 32 && s[0] === 0) {
+        s = s.slice(1);
+    }
+
+    // Pad to 32 bytes each (P-256 uses 32-byte integers)
+    const raw = new Uint8Array(64);
+    raw.set(r, 32 - r.length);
+    raw.set(s, 64 - s.length);
+
+    return raw;
+}
+
+/**
  * Verify the signature in an authentication response
  */
 async function verifySignature(
     credential: AuthenticationCredential,
     storedCredential: StoredCredential,
-    config: WebAuthnConfig
+    _config: WebAuthnConfig
 ): Promise<boolean> {
     try {
         // The signature is computed over authenticatorData + hash(clientDataJSON)
@@ -297,13 +353,19 @@ async function verifySignature(
         signedData.set(authData);
         signedData.set(clientDataHash, authData.length);
 
-        const signature = base64UrlDecode(credential.response.signature);
+        let signature = base64UrlDecode(credential.response.signature);
         const publicKey = base64UrlDecode(storedCredential.publicKey);
 
         // Import the public key
         const algorithm = getAlgorithmParams(storedCredential.algorithm);
         if (!algorithm) {
             throw new Error(`Unsupported algorithm: ${storedCredential.algorithm}`);
+        }
+
+        // For ECDSA, convert DER signature to raw format
+        if (storedCredential.algorithm === -7) {
+            // ES256 - convert DER to raw (r || s)
+            signature = derToRaw(signature);
         }
 
         const cryptoKey = await crypto.subtle.importKey(
@@ -315,14 +377,14 @@ async function verifySignature(
         );
 
         // Verify the signature
-        return crypto.subtle.verify(
+        const result = await crypto.subtle.verify(
             algorithm.verify,
             cryptoKey,
             signature.buffer as ArrayBuffer,
             signedData.buffer as ArrayBuffer
         );
-    } catch (error) {
-        console.error('Signature verification error:', error);
+        return result;
+    } catch {
         return false;
     }
 }

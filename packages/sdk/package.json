@@ -1,6 +1,6 @@
 {
   "name": "@thebbz/siwe-ethos",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "description": "JavaScript SDK for Sign in with Ethos authentication",
   "license": "MIT",

@@ -57,7 +57,7 @@
         "prepublishOnly": "pnpm run test && pnpm run build"
     },
     "dependencies": {
-        "@thebbz/siwe-ethos-providers": "^1.2.0"
+        "@thebbz/siwe-ethos-providers": "^1.3.0"
     },
     "devDependencies": {
         "@types/express": "^5.0.6",
