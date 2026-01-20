@@ -235,12 +235,20 @@ export class EthosAuth {
    * Call this after the user creates a credential with navigator.credentials.create()
    *
    * @param credential - Serialized credential from WebAuthn API
+   * @param userId - User ID from registration options (optional for backwards compatibility)
+   * @param username - Username for the credential (optional for backwards compatibility)
    * @returns Authentication result
    */
-  async verifyWebAuthnRegistration(credential: WebAuthnRegistrationCredential): Promise<AuthResult> {
+  async verifyWebAuthnRegistration(credential: WebAuthnRegistrationCredential, userId?: string, username?: string): Promise<AuthResult> {
     const url = new URL(ENDPOINTS.WEBAUTHN_REGISTER_VERIFY, this.config.authServerUrl);
 
     const body: Record<string, unknown> = { credential };
+    if (userId) {
+      body.userId = userId;
+    }
+    if (username) {
+      body.username = username;
+    }
     if (this.config.minScore !== undefined) {
       body.min_score = this.config.minScore;
     }
@@ -288,12 +296,16 @@ export class EthosAuth {
    * Call this after the user authenticates with navigator.credentials.get()
    *
    * @param credential - Serialized credential from WebAuthn API
+   * @param sessionId - Session ID from authentication options (optional for backwards compatibility)
    * @returns Authentication result
    */
-  async verifyWebAuthnAuthentication(credential: WebAuthnAuthenticationCredential): Promise<AuthResult> {
+  async verifyWebAuthnAuthentication(credential: WebAuthnAuthenticationCredential, sessionId?: string): Promise<AuthResult> {
     const url = new URL(ENDPOINTS.WEBAUTHN_AUTH_VERIFY, this.config.authServerUrl);
 
     const body: Record<string, unknown> = { credential };
+    if (sessionId) {
+      body.sessionId = sessionId;
+    }
     if (this.config.minScore !== undefined) {
       body.min_score = this.config.minScore;
     }

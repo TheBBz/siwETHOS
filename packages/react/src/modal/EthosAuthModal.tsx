@@ -42,11 +42,13 @@ import { useEthosModal } from '../hooks/useEthosModal';
 import { useRecentLogins } from '../hooks/useRecentLogins';
 import { checkWalletInstalled } from '../hooks/useWalletDetection';
 import { WALLET_ICONS, SOCIAL_ICONS } from '../components/Icons';
-import { 
-  getWalletProvider, 
-  parseOAuthCode, 
-  formatOAuthError, 
-  clearOAuthParams 
+import {
+  getWalletProvider,
+  parseOAuthCode,
+  formatOAuthError,
+  clearOAuthParams,
+  isUserCancellation,
+  getUserFriendlyError,
 } from '../utils';
 import type { 
   EthosAuthModalProps, 
@@ -285,16 +287,14 @@ export function EthosAuthModal({
       onSuccess?.(result);
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-      
-      // Check for user rejection
-      if (errorMessage.includes('rejected') || errorMessage.includes('denied') || errorMessage.includes('cancelled')) {
+      // Use error classification utilities for consistent handling
+      if (isUserCancellation(error)) {
         actions.setError('Request was cancelled');
       } else {
-        actions.setError(errorMessage);
+        actions.setError(getUserFriendlyError(error));
       }
-      
-      onError?.(error instanceof Error ? error : new Error(errorMessage));
+
+      onError?.(error instanceof Error ? error : new Error(getUserFriendlyError(error)));
     }
   }, [walletAuth, actions, onSuccess, onError, addRecentLogin]);
 
@@ -392,7 +392,11 @@ export function EthosAuthModal({
 
     try {
       // Get authentication options from server
-      const options = await socialAuth.getWebAuthnAuthenticationOptions();
+      // Server returns { options, sessionId } so we need to extract them
+      const optionsResponse = await socialAuth.getWebAuthnAuthenticationOptions();
+      // Handle both nested and flat response formats
+      const options = (optionsResponse as { options?: typeof optionsResponse }).options || optionsResponse;
+      const sessionId = (optionsResponse as { sessionId?: string }).sessionId;
 
       // Convert challenge from base64url to ArrayBuffer
       const challengeBuffer = base64UrlDecode(options.challenge);
@@ -437,8 +441,8 @@ export function EthosAuthModal({
         authenticatorAttachment: credential.authenticatorAttachment as 'platform' | 'cross-platform' | undefined,
       };
 
-      // Verify with server
-      const result = await socialAuth.verifyWebAuthnAuthentication(serializedCredential);
+      // Verify with server (pass sessionId from options response)
+      const result = await socialAuth.verifyWebAuthnAuthentication(serializedCredential, sessionId);
 
       // Save to recent logins
       addRecentLogin({
@@ -452,16 +456,14 @@ export function EthosAuthModal({
       actions.setSuccess(result.user);
       onSuccess?.(result);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Passkey authentication failed';
-
-      // Check for user cancellation
-      if (errorMessage.includes('cancelled') || errorMessage.includes('AbortError')) {
+      // Check for user cancellation using error classification
+      if (isUserCancellation(error)) {
         actions.setView('passkey');
         return;
       }
 
-      actions.setError(errorMessage);
-      onError?.(error instanceof Error ? error : new Error(errorMessage));
+      actions.setError(getUserFriendlyError(error));
+      onError?.(error instanceof Error ? error : new Error(getUserFriendlyError(error)));
     }
   }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
 
@@ -472,7 +474,11 @@ export function EthosAuthModal({
 
     try {
       // Get registration options from server
-      const options = await socialAuth.getWebAuthnRegistrationOptions(username);
+      // Server returns { options, userId } so we need to extract them
+      const optionsResponse = await socialAuth.getWebAuthnRegistrationOptions(username);
+      // Handle both nested and flat response formats
+      const options = (optionsResponse as { options?: typeof optionsResponse }).options || optionsResponse;
+      const serverUserId = (optionsResponse as { userId?: string }).userId;
 
       // Convert challenge and user ID from base64url to ArrayBuffer
       const challengeBuffer = base64UrlDecode(options.challenge);
@@ -525,8 +531,8 @@ export function EthosAuthModal({
         authenticatorAttachment: credential.authenticatorAttachment as 'platform' | 'cross-platform' | undefined,
       };
 
-      // Verify with server
-      const result = await socialAuth.verifyWebAuthnRegistration(serializedCredential);
+      // Verify with server (pass userId and username from registration options)
+      const result = await socialAuth.verifyWebAuthnRegistration(serializedCredential, serverUserId, username);
 
       // Save to recent logins
       addRecentLogin({
@@ -540,16 +546,14 @@ export function EthosAuthModal({
       actions.setSuccess(result.user);
       onSuccess?.(result);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Passkey registration failed';
-
-      // Check for user cancellation
-      if (errorMessage.includes('cancelled') || errorMessage.includes('AbortError')) {
+      // Check for user cancellation using error classification
+      if (isUserCancellation(error)) {
         actions.setView('passkey');
         return;
       }
 
-      actions.setError(errorMessage);
-      onError?.(error instanceof Error ? error : new Error(errorMessage));
+      actions.setError(getUserFriendlyError(error));
+      onError?.(error instanceof Error ? error : new Error(getUserFriendlyError(error)));
     }
   }, [socialAuth, actions, addRecentLogin, onSuccess, onError]);
 
