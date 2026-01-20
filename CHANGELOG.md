@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-01-20
+
+### Fixed
+
+#### React (`@thebbz/siwe-ethos-react`)
+- **Fixed passkey authentication error** - "Cannot read properties of undefined (reading 'replace')"
+  - Server returns `{ options, sessionId }` but client expected options at root
+  - Extract options and sessionId from nested response structure
+  - Handle both nested and flat response formats for backwards compatibility
+
+#### SDK (`@thebbz/siwe-ethos`)
+- `verifyWebAuthnAuthentication()` now accepts optional `sessionId` parameter
+- `verifyWebAuthnRegistration()` now accepts optional `userId` and `username` parameters
+- Both methods pass additional data to server for proper verification flow
+
 ## [1.4.0] - 2026-01-06
 
 ### Added
